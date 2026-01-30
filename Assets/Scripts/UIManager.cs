@@ -2,61 +2,305 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
 
 public class UIManager : MonoBehaviour
 {
     private Canvas mainCanvas;
-    private GameObject rewardPanel;
-    private TextMeshProUGUI rewardTitle;
-    private TextMeshProUGUI rewardDesc;
-    private Button button1; // Equip / Confirm
-    private Button button2; // Discard / Cancel
-    private TextMeshProUGUI button1Text;
-    private TextMeshProUGUI button2Text;
 
-    private int selectedOption = -1; // -1: waiting, 0: btn1, 1: btn2
+    // Reward UI
+    private GameObject rewardPanel;
+    private Transform rewardContainer;
+
+    // Inventory UI
+    private GameObject inventoryPanel;
+    private List<Image> inventorySlots = new List<Image>();
+    private List<GameObject> inventoryHighlights = new List<GameObject>();
+
+    // Replacement UI
+    private GameObject replacePanel;
+    private Transform replaceContainer;
+
+    private int selectedRewardIndex = -1;
+    private int selectedReplaceIndex = -1;
 
     void Awake()
     {
-        SetupUI();
+        SetupCanvas();
+        SetupInventoryHUD();
+        SetupRewardPanel();
+        SetupReplacePanel();
     }
 
-    void SetupUI()
+    void SetupCanvas()
     {
-        // 1. Canvas
         GameObject canvasObj = new GameObject("MainCanvas");
         mainCanvas = canvasObj.AddComponent<Canvas>();
         mainCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvasObj.AddComponent<CanvasScaler>();
+
+        CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+
         canvasObj.AddComponent<GraphicRaycaster>();
 
-        // Event System
+        // Event System check
         if (FindObjectOfType<UnityEngine.EventSystems.EventSystem>() == null)
         {
             GameObject eventSystem = new GameObject("EventSystem");
             eventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();
             eventSystem.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
         }
+    }
 
-        // 2. Reward Panel
-        rewardPanel = CreatePanel(mainCanvas.transform, "RewardPanel", new Color(0, 0, 0, 0.8f));
+    // --- Inventory HUD ---
+
+    void SetupInventoryHUD()
+    {
+        inventoryPanel = new GameObject("InventoryHUD");
+        inventoryPanel.transform.SetParent(mainCanvas.transform, false);
+        RectTransform rect = inventoryPanel.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0);
+        rect.anchorMax = new Vector2(0.5f, 0);
+        rect.pivot = new Vector2(0.5f, 0);
+        rect.anchoredPosition = new Vector2(0, 50);
+        rect.sizeDelta = new Vector2(600, 120);
+
+        // Horizontal Layout
+        HorizontalLayoutGroup layout = inventoryPanel.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 20;
+        layout.childAlignment = TextAnchor.MiddleCenter;
+
+        for (int i = 0; i < 4; i++)
+        {
+            int index = i;
+            GameObject slot = new GameObject($"Slot_{i}");
+            slot.transform.SetParent(inventoryPanel.transform, false);
+
+            Image bg = slot.AddComponent<Image>();
+            bg.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+
+            Button btn = slot.AddComponent<Button>();
+            btn.onClick.AddListener(() => OnInventorySlotClick(index));
+
+            RectTransform slotRect = slot.GetComponent<RectTransform>();
+            slotRect.sizeDelta = new Vector2(100, 100);
+
+            // Icon (Inner)
+            GameObject iconObj = new GameObject("Icon");
+            iconObj.transform.SetParent(slot.transform, false);
+            Image icon = iconObj.AddComponent<Image>();
+            icon.rectTransform.sizeDelta = new Vector2(80, 80);
+            icon.color = Color.clear; // Hidden by default
+            inventorySlots.Add(icon);
+
+            // Highlight (Border)
+            GameObject highlightObj = new GameObject("Highlight");
+            highlightObj.transform.SetParent(slot.transform, false);
+            Image hImg = highlightObj.AddComponent<Image>();
+            hImg.color = Color.yellow;
+            hImg.rectTransform.sizeDelta = new Vector2(110, 110);
+            hImg.raycastTarget = false;
+            highlightObj.SetActive(false);
+            inventoryHighlights.Add(highlightObj);
+        }
+    }
+
+    void OnInventorySlotClick(int index)
+    {
+        GameManager.Instance.EquipMask(index);
+    }
+
+    public void UpdateInventoryUI()
+    {
+        var inv = GameManager.Instance.inventory;
+        int equipped = GameManager.Instance.equippedMaskIndex;
+
+        for (int i = 0; i < 4; i++)
+        {
+            if (i < inv.Count)
+            {
+                inventorySlots[i].color = inv[i].color;
+                inventorySlots[i].gameObject.SetActive(true);
+            }
+            else
+            {
+                inventorySlots[i].color = Color.clear;
+                inventorySlots[i].gameObject.SetActive(false);
+            }
+
+            inventoryHighlights[i].SetActive(i == equipped && i < inv.Count);
+        }
+    }
+
+    // --- Reward Panel ---
+
+    void SetupRewardPanel()
+    {
+        rewardPanel = CreatePanel(mainCanvas.transform, "RewardPanel", new Color(0, 0, 0, 0.9f));
         rewardPanel.SetActive(false);
 
         // Title
-        rewardTitle = CreateText(rewardPanel.transform, "Title", "REWARD!", 50, new Vector2(0, 150));
+        CreateText(rewardPanel.transform, "Title", "CHOOSE YOUR REWARD", 60, new Vector2(0, 400));
 
-        // Description
-        rewardDesc = CreateText(rewardPanel.transform, "Desc", "You found...", 30, new Vector2(0, 50));
+        // Container
+        GameObject container = new GameObject("Container");
+        container.transform.SetParent(rewardPanel.transform, false);
+        RectTransform rect = container.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(1400, 600);
 
-        // Buttons
-        button1 = CreateButton(rewardPanel.transform, "Btn1", "Equip", new Vector2(-100, -100));
-        button1Text = button1.GetComponentInChildren<TextMeshProUGUI>();
-        button1.onClick.AddListener(() => OnButtonClick(0));
+        HorizontalLayoutGroup layout = container.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 50;
+        layout.childAlignment = TextAnchor.MiddleCenter;
 
-        button2 = CreateButton(rewardPanel.transform, "Btn2", "Discard", new Vector2(100, -100));
-        button2Text = button2.GetComponentInChildren<TextMeshProUGUI>();
-        button2.onClick.AddListener(() => OnButtonClick(1));
+        rewardContainer = container.transform;
     }
+
+    public async UniTask<int> ShowRewardSelection(List<RewardOption> options)
+    {
+        selectedRewardIndex = -1;
+        rewardPanel.SetActive(true);
+
+        // Clear existing children
+        foreach (Transform child in rewardContainer) Destroy(child.gameObject);
+
+        // Create Cards
+        for (int i = 0; i < options.Count; i++)
+        {
+            int index = i;
+            RewardOption opt = options[i];
+            CreateRewardCard(opt, index);
+        }
+
+        await UniTask.WaitUntil(() => selectedRewardIndex != -1);
+
+        rewardPanel.SetActive(false);
+        return selectedRewardIndex;
+    }
+
+    void CreateRewardCard(RewardOption opt, int index)
+    {
+        GameObject card = new GameObject($"Card_{index}");
+        card.transform.SetParent(rewardContainer, false);
+
+        Image bg = card.AddComponent<Image>();
+        bg.color = new Color(0.3f, 0.3f, 0.3f); // Dark Grey
+
+        Button btn = card.AddComponent<Button>();
+        btn.onClick.AddListener(() => selectedRewardIndex = index);
+
+        LayoutElement le = card.AddComponent<LayoutElement>();
+        le.preferredWidth = 400;
+        le.preferredHeight = 550;
+
+        // Content
+        string titleText = "";
+        string descText = opt.description;
+        Color visualColor = Color.white;
+
+        if (opt.type == RewardType.NewMask)
+        {
+            titleText = opt.maskData.name;
+            descText = $"{opt.maskData.description}\n\nATK: {opt.maskData.atkBonus}\nSPD: {opt.maskData.moveSpeedBonus}";
+            visualColor = opt.maskData.color;
+        }
+        else if (opt.type == RewardType.UpgradeMask)
+        {
+            titleText = "UPGRADE MASK";
+            visualColor = Color.cyan;
+        }
+        else if (opt.type == RewardType.StatBoost)
+        {
+            titleText = "STAT BOOST";
+            visualColor = Color.green;
+            // Format effects
+            descText = "Permanent Stats:\n";
+            foreach(var kv in opt.statData.effects)
+            {
+                descText += $"{kv.Key}: {kv.Value}%\n";
+            }
+        }
+
+        CreateText(card.transform, "Title", titleText, 40, new Vector2(0, 200));
+        CreateText(card.transform, "Desc", descText, 24, new Vector2(0, -50));
+
+        // Icon visualization
+        GameObject icon = new GameObject("Icon");
+        icon.transform.SetParent(card.transform, false);
+        Image iconImg = icon.AddComponent<Image>();
+        iconImg.color = visualColor;
+        RectTransform iconRect = icon.AddComponent<RectTransform>();
+        iconRect.anchoredPosition = new Vector2(0, 80);
+        iconRect.sizeDelta = new Vector2(150, 150);
+    }
+
+    // --- Replace Mask Panel ---
+
+    void SetupReplacePanel()
+    {
+        replacePanel = CreatePanel(mainCanvas.transform, "ReplacePanel", new Color(0, 0, 0, 0.95f));
+        replacePanel.SetActive(false);
+
+        CreateText(replacePanel.transform, "Title", "INVENTORY FULL!", 50, new Vector2(0, 300));
+        CreateText(replacePanel.transform, "Sub", "Select a mask to discard for the new one:", 30, new Vector2(0, 200));
+
+        GameObject container = new GameObject("Container");
+        container.transform.SetParent(replacePanel.transform, false);
+        RectTransform rect = container.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(1000, 300);
+
+        HorizontalLayoutGroup layout = container.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 30;
+        layout.childAlignment = TextAnchor.MiddleCenter;
+
+        replaceContainer = container.transform;
+
+        // Cancel Button
+        Button cancelBtn = CreateButton(replacePanel.transform, "CancelBtn", "CANCEL (Keep Old)", new Vector2(0, -300));
+        cancelBtn.onClick.AddListener(() => selectedReplaceIndex = -2); // -2 Cancel
+    }
+
+    public async UniTask<int> ShowReplaceMaskPopup(MaskData newMask)
+    {
+        selectedReplaceIndex = -1;
+        replacePanel.SetActive(true);
+
+        // Clear container
+        foreach(Transform t in replaceContainer) Destroy(t.gameObject);
+
+        // Create buttons for each inventory item
+        var inv = GameManager.Instance.inventory;
+        for (int i = 0; i < inv.Count; i++)
+        {
+            int index = i;
+            GameObject slot = new GameObject($"Slot_{i}");
+            slot.transform.SetParent(replaceContainer, false);
+
+            Image bg = slot.AddComponent<Image>();
+            bg.color = inv[i].color;
+
+            Button btn = slot.AddComponent<Button>();
+            btn.onClick.AddListener(() => selectedReplaceIndex = index);
+
+            LayoutElement le = slot.AddComponent<LayoutElement>();
+            le.preferredWidth = 150;
+            le.preferredHeight = 150;
+
+            CreateText(slot.transform, "Name", inv[i].name, 20, Vector2.zero);
+        }
+
+        await UniTask.WaitUntil(() => selectedReplaceIndex != -1);
+
+        replacePanel.SetActive(false);
+        return selectedReplaceIndex;
+    }
+
+
+    // --- Helpers ---
 
     GameObject CreatePanel(Transform parent, string name, Color color)
     {
@@ -84,7 +328,7 @@ public class UIManager : MonoBehaviour
 
         RectTransform rect = txtObj.GetComponent<RectTransform>();
         rect.anchoredPosition = anchoredPos;
-        rect.sizeDelta = new Vector2(600, 100);
+        rect.sizeDelta = new Vector2(400, 100);
 
         return txt;
     }
@@ -101,62 +345,12 @@ public class UIManager : MonoBehaviour
 
         RectTransform rect = btnObj.GetComponent<RectTransform>();
         rect.anchoredPosition = anchoredPos;
-        rect.sizeDelta = new Vector2(160, 50);
+        rect.sizeDelta = new Vector2(200, 60);
 
-        // Text
         TextMeshProUGUI txt = CreateText(btnObj.transform, "Label", label, 24, Vector2.zero);
         txt.color = Color.black;
-        txt.rectTransform.sizeDelta = new Vector2(160, 50);
+        txt.rectTransform.sizeDelta = new Vector2(200, 60);
 
         return btn;
-    }
-
-    void OnButtonClick(int index)
-    {
-        selectedOption = index;
-    }
-
-    public async UniTask<int> ShowRewardPopup(RewardType type, MaskData mask = null)
-    {
-        rewardPanel.SetActive(true);
-        selectedOption = -1;
-
-        if (type == RewardType.NewMask && mask != null)
-        {
-            rewardTitle.text = "NEW MASK FOUND!";
-            rewardDesc.text = $"<b>{mask.name}</b>\n{mask.description}\n\nATK: {mask.atkBonus} | SPD: {mask.moveSpeedBonus}";
-
-            button1.gameObject.SetActive(true);
-            button1Text.text = "EQUIP";
-
-            button2.gameObject.SetActive(true);
-            button2Text.text = "SALVAGE (+Stats)";
-        }
-        else if (type == RewardType.UpgradeMask)
-        {
-            rewardTitle.text = "MASK UPGRADE!";
-            rewardDesc.text = "Your current mask has been improved!";
-
-            button1.gameObject.SetActive(true);
-            button1Text.text = "GREAT!";
-
-            button2.gameObject.SetActive(false);
-        }
-        else // Stat Boost
-        {
-            rewardTitle.text = "STAT BOOST!";
-            rewardDesc.text = "You feel stronger permanently.";
-
-            button1.gameObject.SetActive(true);
-            button1Text.text = "OK";
-
-            button2.gameObject.SetActive(false);
-        }
-
-        // Wait for input
-        await UniTask.WaitUntil(() => selectedOption != -1);
-
-        rewardPanel.SetActive(false);
-        return selectedOption;
     }
 }
