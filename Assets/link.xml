@@ -1,0 +1,14 @@
+<linker>
+  <assembly fullname="UnityEngine">
+    <type fullname="UnityEngine.CapsuleCollider" preserve="all"/>
+  </assembly>
+  <assembly fullname="UnityEngine.PhysicsModule">
+    <type fullname="UnityEngine.CapsuleCollider" preserve="all"/>
+  </assembly>  
+  <assembly fullname="UnityEngine">
+    <type fullname="UnityEngine.SphereCollider" preserve="all"/>
+  </assembly>
+  <assembly fullname="UnityEngine.PhysicsModule">
+    <type fullname="UnityEngine.SphereCollider" preserve="all"/>
+  </assembly>
+</linker>
