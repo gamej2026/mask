@@ -53,13 +53,29 @@ public class Unit : MonoBehaviour
 
     void CreateHealthText()
     {
-        GameObject textObj = new GameObject("HealthText");
-        textObj.transform.SetParent(transform);
-        textObj.transform.localPosition = Vector3.up * 1.5f;
-        healthText = textObj.AddComponent<TextMeshPro>();
-        healthText.fontSize = 5;
-        healthText.alignment = TextAlignmentOptions.Center;
-        healthText.color = Color.white;
+        GameObject prefab = Resources.Load<GameObject>("Prefabs/UI/HealthText");
+        GameObject textObj;
+        if (prefab != null)
+        {
+            textObj = Instantiate(prefab, transform);
+            textObj.name = "HealthText";
+            textObj.transform.localPosition = Vector3.up * 1.5f;
+        }
+        else
+        {
+            textObj = new GameObject("HealthText");
+            textObj.transform.SetParent(transform);
+            textObj.transform.localPosition = Vector3.up * 1.5f;
+        }
+
+        healthText = textObj.GetComponent<TextMeshPro>();
+        if (healthText == null)
+        {
+            healthText = textObj.AddComponent<TextMeshPro>();
+            healthText.fontSize = 5;
+            healthText.alignment = TextAlignmentOptions.Center;
+            healthText.color = Color.white;
+        }
     }
 
     // Initialize for Player
@@ -297,24 +313,42 @@ public class Unit : MonoBehaviour
     {
         if (target == null) return;
 
-        GameObject projObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        projObj.name = "Projectile";
-        projObj.transform.position = transform.position + Vector3.up * 0.5f; // Center
-        projObj.transform.localScale = Vector3.one * 0.5f;
+        GameObject prefab = Resources.Load<GameObject>("Prefabs/Projectiles/Projectile");
+        GameObject projObj;
+
+        if (prefab != null)
+        {
+            projObj = Instantiate(prefab, transform.position + Vector3.up * 0.5f, Quaternion.identity);
+            projObj.name = "Projectile";
+        }
+        else
+        {
+            projObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            projObj.name = "Projectile";
+            projObj.transform.position = transform.position + Vector3.up * 0.5f; // Center
+            projObj.transform.localScale = Vector3.one * 0.5f;
+        }
 
         // Physics Setup
         var col = projObj.GetComponent<Collider>();
-        if(col) col.isTrigger = true;
+        if (col) col.isTrigger = true;
 
-        var rb = projObj.AddComponent<Rigidbody>();
-        rb.isKinematic = true;
-        rb.useGravity = false;
+        var rb = projObj.GetComponent<Rigidbody>();
+        if (rb == null)
+        {
+            rb = projObj.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.useGravity = false;
+        }
 
         // Color
         var rend = projObj.GetComponent<Renderer>();
-        rend.material.color = currentMask != null ? currentMask.color : Color.yellow;
+        if (rend)
+            rend.material.color = currentMask != null ? currentMask.color : Color.yellow;
 
-        Projectile p = projObj.AddComponent<Projectile>();
+        Projectile p = projObj.GetComponent<Projectile>();
+        if (p == null) p = projObj.AddComponent<Projectile>();
+
         p.Initialize(this, target, attackPower * damageMultiplier, knockbackDist);
     }
 
@@ -380,13 +414,30 @@ public class Unit : MonoBehaviour
 
     void ShowText(string msg, Color col)
     {
-        GameObject txtObj = new GameObject("PopupText");
-        txtObj.transform.position = transform.position + Vector3.up * 1f;
-        var tmp = txtObj.AddComponent<TextMeshPro>();
+        GameObject prefab = Resources.Load<GameObject>("Prefabs/UI/PopupText");
+        GameObject txtObj;
+        TextMeshPro tmp;
+
+        if (prefab != null)
+        {
+            txtObj = Instantiate(prefab, transform.position + Vector3.up * 1f, Quaternion.identity);
+        }
+        else
+        {
+            txtObj = new GameObject("PopupText");
+            txtObj.transform.position = transform.position + Vector3.up * 1f;
+        }
+
+        tmp = txtObj.GetComponent<TextMeshPro>();
+        if (tmp == null)
+        {
+            tmp = txtObj.AddComponent<TextMeshPro>();
+            tmp.fontSize = 4;
+            tmp.alignment = TextAlignmentOptions.Center;
+        }
+
         tmp.text = msg;
-        tmp.fontSize = 4;
         tmp.color = col;
-        tmp.alignment = TextAlignmentOptions.Center;
 
         txtObj.transform.DOMoveY(txtObj.transform.position.y + 2f, 1f);
         tmp.DOFade(0, 1f).OnComplete(() => Destroy(txtObj));

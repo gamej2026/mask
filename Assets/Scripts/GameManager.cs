@@ -33,8 +33,16 @@ public class GameManager : MonoBehaviour
 
         if (FindFirstObjectByType<GameManager>() == null)
         {
-            GameObject gmObj = new GameObject("GameManager");
-            gmObj.AddComponent<GameManager>();
+            GameObject prefab = Resources.Load<GameObject>("Prefabs/Managers/GameManager");
+            if (prefab != null)
+            {
+                Instantiate(prefab).name = "GameManager";
+            }
+            else
+            {
+                GameObject gmObj = new GameObject("GameManager");
+                gmObj.AddComponent<GameManager>();
+            }
         }
     }
 
@@ -61,12 +69,22 @@ public class GameManager : MonoBehaviour
         mainCam = Camera.main;
         if (mainCam == null)
         {
-            GameObject camObj = new GameObject("Main Camera");
-            mainCam = camObj.AddComponent<Camera>();
-            mainCam.tag = "MainCamera";
-            mainCam.orthographic = true;
-            mainCam.orthographicSize = 5f;
-            camObj.transform.position = new Vector3(0, 0, -10);
+            GameObject camPrefab = Resources.Load<GameObject>("Prefabs/Environment/MainCamera");
+            if (camPrefab != null)
+            {
+                GameObject camObj = Instantiate(camPrefab);
+                camObj.name = "Main Camera";
+                mainCam = camObj.GetComponent<Camera>();
+            }
+            else
+            {
+                GameObject camObj = new GameObject("Main Camera");
+                mainCam = camObj.AddComponent<Camera>();
+                mainCam.tag = "MainCamera";
+                mainCam.orthographic = true;
+                mainCam.orthographicSize = 5f;
+                camObj.transform.position = new Vector3(0, 0, -10);
+            }
         }
         else
         {
@@ -81,63 +99,143 @@ public class GameManager : MonoBehaviour
         // Light
         if (FindFirstObjectByType<Light>() == null)
         {
-            GameObject lightObj = new GameObject("Light");
-            Light l = lightObj.AddComponent<Light>();
-            l.type = LightType.Directional;
-            lightObj.transform.rotation = Quaternion.Euler(50, -30, 0);
+            GameObject lightPrefab = Resources.Load<GameObject>("Prefabs/Environment/DirectionalLight");
+            if (lightPrefab != null)
+            {
+                Instantiate(lightPrefab).name = "Light";
+            }
+            else
+            {
+                GameObject lightObj = new GameObject("Light");
+                Light l = lightObj.AddComponent<Light>();
+                l.type = LightType.Directional;
+                lightObj.transform.rotation = Quaternion.Euler(50, -30, 0);
+            }
         }
 
         // Environment
-        GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        ground.name = "Ground";
-        ground.transform.position = new Vector3(0, -5.5f, 0);
-        ground.transform.localScale = new Vector3(1000, 10, 10);
-        var groundRend = ground.GetComponent<Renderer>();
-        if(groundRend) groundRend.material.color = new Color(0.2f, 0.6f, 0.2f);
+        GameObject groundPrefab = Resources.Load<GameObject>("Prefabs/Environment/Ground");
+        GameObject ground;
+        if (groundPrefab != null)
+        {
+            ground = Instantiate(groundPrefab);
+            ground.name = "Ground";
+            // Ensure position/scale if prefab doesn't have it set correctly?
+            // Let's assume prefab is correct, but force position for consistency with code logic if needed.
+            // ground.transform.position = new Vector3(0, -5.5f, 0);
+        }
+        else
+        {
+            ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            ground.name = "Ground";
+            ground.transform.position = new Vector3(0, -5.5f, 0);
+            ground.transform.localScale = new Vector3(1000, 10, 10);
+            var groundRend = ground.GetComponent<Renderer>();
+            if (groundRend) groundRend.material.color = new Color(0.2f, 0.6f, 0.2f);
+        }
 
         CreateBackgroundProps();
 
         // UIManager
-        GameObject uiObj = new GameObject("UIManager");
-        uiManager = uiObj.AddComponent<UIManager>();
+        if (uiManager == null) // Check if assigned via Inspector (if GameManager was prefab)
+        {
+            GameObject uiPrefab = Resources.Load<GameObject>("Prefabs/Managers/UIManager");
+            if (uiPrefab != null)
+            {
+                GameObject uiObj = Instantiate(uiPrefab);
+                uiObj.name = "UIManager";
+                uiManager = uiObj.GetComponent<UIManager>();
+                if (uiManager == null) uiManager = uiObj.AddComponent<UIManager>();
+            }
+            else
+            {
+                GameObject uiObj = new GameObject("UIManager");
+                uiManager = uiObj.AddComponent<UIManager>();
+            }
+        }
 
         // Create Player
-        GameObject pObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        pObj.name = "Player";
-        player = pObj.AddComponent<Unit>();
-        // Initialize will be called after equipping mask
-        player.transform.position = Vector3.zero;
+        if (player == null) // Check if assigned via Inspector
+        {
+            GameObject pPrefab = Resources.Load<GameObject>("Prefabs/Units/Player");
+            GameObject pObj;
+            if (pPrefab != null)
+            {
+                pObj = Instantiate(pPrefab);
+                pObj.name = "Player";
+            }
+            else
+            {
+                pObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                pObj.name = "Player";
+            }
+
+            player = pObj.GetComponent<Unit>();
+            if(player == null) player = pObj.AddComponent<Unit>();
+
+            // Initialize will be called after equipping mask
+            player.transform.position = Vector3.zero;
+        }
 
         // Game Clear Text
-        GameObject gcObj = new GameObject("GameClearText");
-        gcObj.transform.SetParent(mainCam.transform);
-        gcObj.transform.localPosition = new Vector3(0, 0, 10);
-        gameClearText = gcObj.AddComponent<TextMeshPro>();
-        gameClearText.text = "GAME CLEAR";
-        gameClearText.fontSize = 12;
-        gameClearText.alignment = TextAlignmentOptions.Center;
-        gameClearText.color = Color.white;
-        gcObj.SetActive(false);
+        if (gameClearText == null)
+        {
+            // Try load prefab
+            GameObject gcPrefab = Resources.Load<GameObject>("Prefabs/UI/GameClearText");
+            if (gcPrefab != null)
+            {
+                 GameObject gcObj = Instantiate(gcPrefab, mainCam.transform);
+                 gcObj.name = "GameClearText";
+                 gcObj.transform.localPosition = new Vector3(0, 0, 10);
+                 gameClearText = gcObj.GetComponent<TextMeshPro>();
+                 if(gameClearText == null) gameClearText = gcObj.AddComponent<TextMeshPro>();
+                 gcObj.SetActive(false);
+            }
+            else
+            {
+                GameObject gcObj = new GameObject("GameClearText");
+                gcObj.transform.SetParent(mainCam.transform);
+                gcObj.transform.localPosition = new Vector3(0, 0, 10);
+                gameClearText = gcObj.AddComponent<TextMeshPro>();
+                gameClearText.text = "GAME CLEAR";
+                gameClearText.fontSize = 12;
+                gameClearText.alignment = TextAlignmentOptions.Center;
+                gameClearText.color = Color.white;
+                gcObj.SetActive(false);
+            }
+        }
     }
 
     void CreateBackgroundProps()
     {
+        GameObject treePrefab = Resources.Load<GameObject>("Prefabs/Environment/Tree");
+
         for(int i = 0; i < 20; i++)
         {
             float xPos = Random.Range(-10f, 100f);
             float zPos = Random.Range(5f, 15f);
 
-            GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            trunk.name = "TreeTrunk";
-            trunk.transform.position = new Vector3(xPos, 0, zPos);
-            trunk.transform.localScale = new Vector3(0.5f, 2f, 0.5f);
-            trunk.GetComponent<Renderer>().material.color = new Color(0.4f, 0.2f, 0.1f);
+            if (treePrefab != null)
+            {
+                Instantiate(treePrefab, new Vector3(xPos, 0, zPos), Quaternion.identity);
+            }
+            else
+            {
+                GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                trunk.name = "TreeTrunk";
+                trunk.transform.position = new Vector3(xPos, 0, zPos);
+                trunk.transform.localScale = new Vector3(0.5f, 2f, 0.5f);
+                trunk.GetComponent<Renderer>().material.color = new Color(0.4f, 0.2f, 0.1f);
 
-            GameObject leaves = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            leaves.name = "TreeLeaves";
-            leaves.transform.position = new Vector3(xPos, 2.5f, zPos);
-            leaves.transform.localScale = Vector3.one * 2.5f;
-            leaves.GetComponent<Renderer>().material.color = new Color(0.1f, 0.5f, 0.1f);
+                GameObject leaves = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                leaves.name = "TreeLeaves";
+                leaves.transform.position = new Vector3(xPos, 2.5f, zPos);
+                leaves.transform.localScale = Vector3.one * 2.5f;
+                leaves.GetComponent<Renderer>().material.color = new Color(0.1f, 0.5f, 0.1f);
+
+                // Parent leaves to trunk for cleaner hierarchy if programmatic
+                leaves.transform.SetParent(trunk.transform, true);
+            }
         }
     }
 
@@ -288,10 +386,25 @@ public class GameManager : MonoBehaviour
             Vector3 camPos = mainCam.transform.position;
             Vector3 spawnPos = new Vector3(camPos.x + screenWidth / 2f + 2f, 0, 0);
 
-            GameObject eObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            eObj.name = mData.name;
-            eObj.transform.position = spawnPos;
-            enemy = eObj.AddComponent<Unit>();
+            GameObject eObj;
+            // Try specific monster prefab first
+            GameObject monPrefab = Resources.Load<GameObject>($"Prefabs/Units/{monId}");
+            if (monPrefab == null) monPrefab = Resources.Load<GameObject>("Prefabs/Units/Monster");
+
+            if (monPrefab != null)
+            {
+                eObj = Instantiate(monPrefab, spawnPos, Quaternion.identity);
+                eObj.name = mData.name;
+            }
+            else
+            {
+                eObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                eObj.name = mData.name;
+                eObj.transform.position = spawnPos;
+            }
+
+            enemy = eObj.GetComponent<Unit>();
+            if (enemy == null) enemy = eObj.AddComponent<Unit>();
             enemy.InitializeMonster(mData);
 
             player.target = enemy;
