@@ -1,5 +1,8 @@
 using UnityEngine;
 using System.Collections;
+using Cysharp.Threading.Tasks;
+using DG.Tweening;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -7,7 +10,7 @@ public class GameManager : MonoBehaviour
     private Unit enemy;
     private Camera mainCam;
     private GameObject starReward;
-    private TextMesh gameClearText;
+    private TextMeshPro gameClearText;
 
     // States
     private enum GameState { Move, Battle, Reward, End }
@@ -30,7 +33,8 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         SetupScene();
-        StartCoroutine(GameLoop());
+        // Fire and forget
+        GameLoop().Forget();
     }
 
     void SetupScene()
@@ -54,6 +58,10 @@ public class GameManager : MonoBehaviour
             mainCam.orthographicSize = 5f;
         }
 
+        // Environment: Sky
+        mainCam.clearFlags = CameraClearFlags.SolidColor;
+        mainCam.backgroundColor = new Color(0.53f, 0.8f, 0.92f); // Sky Blue
+
         // Light
         if (FindObjectOfType<Light>() == null)
         {
@@ -62,6 +70,17 @@ public class GameManager : MonoBehaviour
             l.type = LightType.Directional;
             lightObj.transform.rotation = Quaternion.Euler(50, -30, 0);
         }
+
+        // Environment: Ground
+        GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        ground.name = "Ground";
+        ground.transform.position = new Vector3(0, -5.5f, 0); // Positioned so top is at -0.5 (below player)
+        ground.transform.localScale = new Vector3(1000, 10, 10);
+        var groundRend = ground.GetComponent<Renderer>();
+        if(groundRend) groundRend.material.color = new Color(0.2f, 0.6f, 0.2f); // Grass Green
+
+        // Environment: Trees (Background)
+        CreateBackgroundProps();
 
         // Create Player
         GameObject pObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -89,24 +108,53 @@ public class GameManager : MonoBehaviour
         GameObject gcObj = new GameObject("GameClearText");
         gcObj.transform.SetParent(mainCam.transform);
         gcObj.transform.localPosition = new Vector3(0, 0, 10);
-        gameClearText = gcObj.AddComponent<TextMesh>();
+
+        // Setup TMP
+        gameClearText = gcObj.AddComponent<TextMeshPro>();
         gameClearText.text = "GAME CLEAR";
-        gameClearText.fontSize = 50;
-        gameClearText.anchor = TextAnchor.MiddleCenter;
+        gameClearText.fontSize = 12; // TMP font sizes are different
+        gameClearText.alignment = TextAlignmentOptions.Center;
         gameClearText.color = Color.white;
+        // Try to load default font if possible, otherwise it might look pink/invisible
+        // gameClearText.font = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+
         gcObj.SetActive(false);
     }
 
-    IEnumerator GameLoop()
+    void CreateBackgroundProps()
+    {
+        // Simple procedural trees
+        for(int i = 0; i < 20; i++)
+        {
+            float xPos = Random.Range(-10f, 100f);
+            float zPos = Random.Range(5f, 15f);
+
+            // Trunk
+            GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            trunk.name = "TreeTrunk";
+            trunk.transform.position = new Vector3(xPos, 0, zPos);
+            trunk.transform.localScale = new Vector3(0.5f, 2f, 0.5f);
+            trunk.GetComponent<Renderer>().material.color = new Color(0.4f, 0.2f, 0.1f); // Brown
+
+            // Leaves
+            GameObject leaves = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            leaves.name = "TreeLeaves";
+            leaves.transform.position = new Vector3(xPos, 2.5f, zPos);
+            leaves.transform.localScale = Vector3.one * 2.5f;
+            leaves.GetComponent<Renderer>().material.color = new Color(0.1f, 0.5f, 0.1f); // Dark Green
+        }
+    }
+
+    async UniTaskVoid GameLoop()
     {
         while (true)
         {
-            yield return StartCoroutine(MovePhase());
+            await MovePhase();
 
             bool isBoss = (stageCount == bossStage);
-            yield return StartCoroutine(BattlePhase(isBoss));
+            await BattlePhase(isBoss);
 
-            yield return StartCoroutine(RewardPhase(isBoss));
+            await RewardPhase(isBoss);
 
             if (isBoss) break; // End Game
 
@@ -114,7 +162,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    IEnumerator MovePhase()
+    async UniTask MovePhase()
     {
         currentState = GameState.Move;
         Debug.Log("Starting Move Phase");
@@ -125,39 +173,44 @@ public class GameManager : MonoBehaviour
 
         float totalDist = screenWidth * 3f;
         float duration = 5f;
-        float speed = totalDist / duration;
+
+        // Use DoTween for movement?
+        // We need player to move and camera to follow.
+        // It's easier to keep the update loop or use DOTween on player and update camera.
 
         player.isMovingScenario = true;
-        float originalSpeed = player.moveSpeed;
-        player.moveSpeed = speed; // Override speed for this phase
 
-        float elapsed = 0;
-        while (elapsed < duration)
+        // Calculate target X
+        float startX = player.transform.position.x;
+        float targetX = startX + totalDist;
+
+        // DoTween
+        await player.transform.DOMoveX(targetX, duration).SetEase(Ease.Linear).AsyncWaitForCompletion();
+
+        player.isMovingScenario = false;
+    }
+
+    // Since we are using DoTween for movement in MovePhase, we need to handle Camera follow in Update or similar.
+    void LateUpdate()
+    {
+        // Simple camera follow
+        if (player != null && mainCam != null)
         {
-            // Camera follows player
             Vector3 camPos = mainCam.transform.position;
             camPos.x = player.transform.position.x;
             mainCam.transform.position = camPos;
-
-            elapsed += Time.deltaTime;
-            yield return null;
         }
-
-        player.isMovingScenario = false;
-        player.moveSpeed = originalSpeed; // Restore combat speed
     }
 
-    IEnumerator BattlePhase(bool isBoss)
+    async UniTask BattlePhase(bool isBoss)
     {
         currentState = GameState.Battle;
         Debug.Log($"Starting Battle Phase (Stage {stageCount})");
 
         // Spawn Enemy
-        // Enemy enters from right side of screen
         float screenHeight = mainCam.orthographicSize * 2f;
         float screenWidth = screenHeight * mainCam.aspect;
 
-        // Spawn slightly offscreen to right relative to camera
         Vector3 camPos = mainCam.transform.position;
         Vector3 spawnPos = new Vector3(camPos.x + screenWidth / 2f + 2f, 0, 0);
 
@@ -170,13 +223,13 @@ public class GameManager : MonoBehaviour
         if (isBoss)
         {
             eObj.transform.localScale = Vector3.one * 2f;
-            enemy.maxHealth = 300; // Boss HP
-            enemy.moveSpeed = 2f; // Slower
-            enemy.attackSpeed = 2.0f; // Slower attack
-            enemy.attackRange = 3f; // Longer range
+            enemy.maxHealth = 300;
+            enemy.moveSpeed = 2f;
+            enemy.attackSpeed = 2.0f;
+            enemy.attackRange = 3f;
             enemy.knockbackDist = 2f;
             enemy.attackPower = 20f;
-            eObj.GetComponent<Renderer>().material.color = new Color(0.5f, 0, 0.5f); // Purple
+            eObj.GetComponent<Renderer>().material.color = new Color(0.5f, 0, 0.5f);
         }
         else
         {
@@ -189,26 +242,15 @@ public class GameManager : MonoBehaviour
         }
 
         enemy.Initialize(Team.Enemy);
-
-        // Override visual for Boss if needed (Initialize resets color)
         if(isBoss) eObj.GetComponent<Renderer>().material.color = new Color(0.5f, 0, 0.5f);
 
-        // Assign Targets
         player.target = enemy;
         enemy.target = player;
 
         // Wait for death
-        while (player.currentHealth > 0 && enemy.currentHealth > 0)
-        {
-             // Camera follows player
-             Vector3 cPos = mainCam.transform.position;
-             cPos.x = player.transform.position.x;
-             mainCam.transform.position = cPos;
+        // Use UniTask.WaitUntil
+        await UniTask.WaitUntil(() => player.currentHealth <= 0 || enemy.currentHealth <= 0);
 
-             yield return null;
-        }
-
-        // Check result
         if (enemy.currentHealth <= 0)
         {
             Debug.Log("Enemy Defeated");
@@ -216,39 +258,44 @@ public class GameManager : MonoBehaviour
         else if (player.currentHealth <= 0)
         {
             Debug.Log("Player Defeated - Game Over");
-            yield break;
+            // Stop loop?
+            await UniTask.Yield(); // Just yield
+            return; // Exit
         }
 
-        // Cleanup enemy object if not destroyed (Unit disables it)
         if (enemy != null && enemy.gameObject.activeInHierarchy)
             enemy.gameObject.SetActive(false);
 
-        // Clean up reference
         player.target = null;
     }
 
-    IEnumerator RewardPhase(bool isBoss)
+    async UniTask RewardPhase(bool isBoss)
     {
         currentState = GameState.Reward;
         Debug.Log("Starting Reward Phase");
 
         if (isBoss)
         {
-            // Game Clear
             gameClearText.gameObject.SetActive(true);
+            gameClearText.transform.DOScale(1.5f, 1f).SetLoopType(LoopType.Yoyo).SetLoops(-1); // Pulse effect
             currentState = GameState.End;
             Debug.Log("GAME CLEAR");
-            yield return new WaitForSeconds(5f);
+            await UniTask.Delay(5000);
         }
         else
         {
-            // Show Star above player
             starReward.transform.position = player.transform.position + Vector3.up * 2f;
             starReward.SetActive(true);
 
-            yield return new WaitForSeconds(2f); // Show for 2 seconds
+            // Pop effect
+            starReward.transform.localScale = Vector3.zero;
+            starReward.transform.DOScale(1f, 0.5f).SetEase(Ease.OutBack);
+            starReward.transform.DORotate(new Vector3(0, 360, 0), 2f, RotateMode.FastBeyond360).SetEase(Ease.Linear).SetLoops(-1);
+
+            await UniTask.Delay(2000);
 
             starReward.SetActive(false);
+            starReward.transform.DOKill();
         }
     }
 }
