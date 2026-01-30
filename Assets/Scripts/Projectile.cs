@@ -7,14 +7,11 @@ public class Projectile : MonoBehaviour
     public float knockback;
     public Unit target;
     public Unit owner;
-    public float collisionRadius = 0.5f; // Radius for collision detection
 
-    private Vector3 direction;
     private Vector3 initialDirection; // Store initial direction to prevent backward movement
     private bool initialized = false;
     private Rigidbody rb;
-    private float lastCollisionCheckTime = 0f;
-    private const float collisionCheckInterval = 0.05f; // Check collision every 0.05 seconds
+    private bool hasHit = false; // Prevent multiple hits
 
     public void Initialize(Unit _owner, Unit _target, float _damage, float _knockback)
     {
@@ -26,16 +23,13 @@ public class Projectile : MonoBehaviour
 
         if (target != null)
         {
-            direction = (target.transform.position - transform.position).normalized;
-            direction.y = 0;
+            initialDirection = (target.transform.position - transform.position).normalized;
+            initialDirection.y = 0;
         }
         else
         {
-            direction = transform.forward;
+            initialDirection = transform.forward;
         }
-
-        // Store initial direction to prevent backward movement
-        initialDirection = direction;
 
         Destroy(gameObject, 3f);
         initialized = true;
@@ -43,10 +37,7 @@ public class Projectile : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (!initialized) return;
-
-        // Don't update direction dynamically - use initial direction to prevent backward movement
-        // Only keep the initial direction set during Initialize
+        if (!initialized || hasHit) return;
 
         if (rb != null)
         {
@@ -58,57 +49,29 @@ public class Projectile : MonoBehaviour
             // Fallback
             transform.Translate(initialDirection * speed * Time.deltaTime, Space.World);
         }
-
-        // Check collision with enemies (throttled for performance)
-        if (Time.time - lastCollisionCheckTime >= collisionCheckInterval)
-        {
-            lastCollisionCheckTime = Time.time;
-            CheckCollisionWithEnemies();
-        }
     }
 
-    void CheckCollisionWithEnemies()
+    void OnTriggerEnter(Collider other)
     {
-        if (owner == null) return;
+        if (hasHit || !initialized || owner == null) return;
 
-        // Find all Units in the scene
-        Unit[] allUnits = GameObject.FindObjectsByType<Unit>(FindObjectsSortMode.None);
-        
-        foreach (Unit unit in allUnits)
-        {
-            // Skip if it's the owner
-            if (unit == owner) continue;
-            
-            // Skip if same team
-            if (unit.team == owner.team) continue;
-            
-            // Skip if unit is dead or inactive
-            if (unit.state == UnitState.Die || !unit.gameObject.activeInHierarchy) continue;
+        // Try to get Unit component from the collided object
+        Unit unit = other.GetComponent<Unit>();
+        if (unit == null) return;
 
-            // Calculate distance on X axis (primary) and Z axis, ignoring Y for 2D-style gameplay
-            float projectileX = transform.position.x;
-            float projectileZ = transform.position.z;
-            float unitX = unit.transform.position.x;
-            float unitZ = unit.transform.position.z;
-            
-            // Get unit's scale as radius approximation
-            float unitRadius = unit.transform.localScale.x * 0.5f;
-            float totalRadius = collisionRadius + unitRadius;
-            
-            // Check collision using X and Z position with combined radius
-            float distanceX = Mathf.Abs(projectileX - unitX);
-            float distanceZ = Mathf.Abs(projectileZ - unitZ);
-            
-            // Use 2D distance for more accurate collision detection on the XZ plane
-            float distance2D = Mathf.Sqrt(distanceX * distanceX + distanceZ * distanceZ);
-            
-            if (distance2D <= totalRadius)
-            {
-                Debug.Log($"Projectile Hit {unit.name} for {damage}");
-                unit.TakeDamage(damage, knockback);
-                Destroy(gameObject);
-                return; // Exit after hitting one unit
-            }
-        }
+        // Skip if it's the owner
+        if (unit == owner) return;
+
+        // Skip if same team
+        if (unit.team == owner.team) return;
+
+        // Skip if unit is dead or inactive
+        if (unit.state == UnitState.Die || !unit.gameObject.activeInHierarchy) return;
+
+        // Hit the unit
+        hasHit = true;
+        Debug.Log($"Projectile Hit {unit.name} for {damage}");
+        unit.TakeDamage(damage, knockback);
+        Destroy(gameObject);
     }
 }
