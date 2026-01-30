@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
@@ -97,6 +97,11 @@ public class Unit : MonoBehaviour
         RecalculateStats(); // Basically just sets base to current
         currentHealth = maxHealth;
         state = UnitState.Idle;
+
+        // 키 작은 적은 유저 총알에 맞지 않는 버그 때문에 적들 키를 모두 키움
+        var boxCollider = GetComponent<BoxCollider>();
+        boxCollider.center = new Vector3(0, 0.5f, 0);
+        boxCollider.size = new Vector3(1, 2, 1);
 
         if (rend != null)
         {
