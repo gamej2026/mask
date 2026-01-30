@@ -62,9 +62,16 @@ public class Unit : MonoBehaviour
 
         // Set Default Mask if none
         if (mask == null)
-            currentMask = MaskDatabase.allMasks[0]; // Default
+        {
+            if (team == Team.Player)
+                currentMask = MaskDatabase.allMasks[0].Copy();
+            else
+                currentMask = null;
+        }
         else
+        {
             currentMask = mask;
+        }
 
         RecalculateStats();
 
@@ -87,18 +94,33 @@ public class Unit : MonoBehaviour
 
     public void RecalculateStats()
     {
+        float hpBonus = 0;
+        float moveSpeedBonus = 0;
+        float atkSpeedBonus = 0;
+        float rangeBonus = 0;
+        float atkBonus = 0;
+
+        if (currentMask != null)
+        {
+            hpBonus = currentMask.hpBonus;
+            moveSpeedBonus = currentMask.moveSpeedBonus;
+            atkSpeedBonus = currentMask.atkSpeedBonus;
+            rangeBonus = currentMask.rangeBonus;
+            atkBonus = currentMask.atkBonus;
+        }
+
         // Start with base
-        maxHealth = baseMaxHealth + currentMask.hpBonus;
-        moveSpeed = baseMoveSpeed + currentMask.moveSpeedBonus;
-        attackSpeed = baseAttackSpeed + currentMask.atkSpeedBonus;
+        maxHealth = baseMaxHealth + hpBonus;
+        moveSpeed = baseMoveSpeed + moveSpeedBonus;
+        attackSpeed = baseAttackSpeed + atkSpeedBonus;
         if (attackSpeed < 0.1f) attackSpeed = 0.1f; // Cap speed
 
-        attackRange = baseAttackRange + currentMask.rangeBonus;
-        attackPower = baseAttackPower + currentMask.atkBonus;
+        attackRange = baseAttackRange + rangeBonus;
+        attackPower = baseAttackPower + atkBonus;
         knockbackDist = baseKnockbackDist; // Could be modified by mask too
 
         // Skill modifiers
-        if (currentMask.skill == SkillType.KnockbackBoost)
+        if (currentMask != null && currentMask.skill == SkillType.KnockbackBoost)
         {
             knockbackDist += 1.0f;
         }
@@ -211,7 +233,7 @@ public class Unit : MonoBehaviour
                 target.TakeDamage(attackPower, knockbackDist);
 
                 // Double Strike Skill
-                if (currentMask.skill == SkillType.DoubleStrike)
+                if (currentMask != null && currentMask.skill == SkillType.DoubleStrike)
                 {
                     await UniTask.Delay(100);
                     if(target != null && target.state != UnitState.Die)

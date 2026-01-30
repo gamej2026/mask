@@ -43,8 +43,10 @@ public static class MaskDatabase
 {
     public static List<MaskData> allMasks = new List<MaskData>();
 
-    static MaskDatabase()
+    public static void Initialize()
     {
+        allMasks.Clear();
+
         // 1. Default Mask (Steampunk Basic)
         allMasks.Add(new MaskData
         {

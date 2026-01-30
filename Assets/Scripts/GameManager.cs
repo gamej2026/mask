@@ -32,6 +32,7 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        MaskDatabase.Initialize();
         SetupScene();
         GameLoop().Forget();
     }
@@ -132,6 +133,13 @@ public class GameManager : MonoBehaviour
 
             bool isBoss = (stageCount == bossStage);
             await BattlePhase(isBoss);
+
+            if (player.currentHealth <= 0)
+            {
+                Debug.Log("Game Over");
+                currentState = GameState.End;
+                break;
+            }
 
             // Boss clear check
             if (isBoss)
