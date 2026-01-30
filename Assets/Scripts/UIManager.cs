@@ -154,8 +154,8 @@ public class UIManager : MonoBehaviour
         // Make it overlay everything
         detailPanel.transform.SetAsLastSibling();
 
-        detailName = CreateText(detailPanel.transform, "Name", "Mask Name", 40, new Vector2(0, 120));
-        detailDesc = CreateText(detailPanel.transform, "Desc", "Stats...", 24, new Vector2(0, 20));
+        detailName = CreateText(detailPanel.transform, "Name", "Mask Name", 36, new Vector2(0, 60));
+        detailDesc = CreateText(detailPanel.transform, "Desc", "Stats...", 22, new Vector2(0, -50));
     }
 
     public void ShowMaskDetail(MaskData mask)
