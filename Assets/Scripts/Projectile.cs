@@ -13,6 +13,8 @@ public class Projectile : MonoBehaviour
     private Vector3 initialDirection; // Store initial direction to prevent backward movement
     private bool initialized = false;
     private Rigidbody rb;
+    private float lastCollisionCheckTime = 0f;
+    private const float collisionCheckInterval = 0.05f; // Check collision every 0.05 seconds
 
     public void Initialize(Unit _owner, Unit _target, float _damage, float _knockback)
     {
@@ -57,8 +59,12 @@ public class Projectile : MonoBehaviour
             transform.Translate(initialDirection * speed * Time.deltaTime, Space.World);
         }
 
-        // Check collision with enemies using position and radius
-        CheckCollisionWithEnemies();
+        // Check collision with enemies (throttled for performance)
+        if (Time.time - lastCollisionCheckTime >= collisionCheckInterval)
+        {
+            lastCollisionCheckTime = Time.time;
+            CheckCollisionWithEnemies();
+        }
     }
 
     void CheckCollisionWithEnemies()
@@ -79,18 +85,24 @@ public class Projectile : MonoBehaviour
             // Skip if unit is dead or inactive
             if (unit.state == UnitState.Die || !unit.gameObject.activeInHierarchy) continue;
 
-            // Calculate distance on X axis and use radius for collision
+            // Calculate distance on X axis (primary) and Z axis, ignoring Y for 2D-style gameplay
             float projectileX = transform.position.x;
+            float projectileZ = transform.position.z;
             float unitX = unit.transform.position.x;
+            float unitZ = unit.transform.position.z;
             
             // Get unit's scale as radius approximation
             float unitRadius = unit.transform.localScale.x * 0.5f;
             float totalRadius = collisionRadius + unitRadius;
             
-            // Check collision using X position and combined radius
+            // Check collision using X and Z position with combined radius
             float distanceX = Mathf.Abs(projectileX - unitX);
+            float distanceZ = Mathf.Abs(projectileZ - unitZ);
             
-            if (distanceX <= totalRadius)
+            // Use 2D distance for more accurate collision detection on the XZ plane
+            float distance2D = Mathf.Sqrt(distanceX * distanceX + distanceZ * distanceZ);
+            
+            if (distance2D <= totalRadius)
             {
                 Debug.Log($"Projectile Hit {unit.name} for {damage}");
                 unit.TakeDamage(damage, knockback);
