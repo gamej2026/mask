@@ -1,5 +1,8 @@
 {
   "dependencies": {
+    "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "com.demigiant.dotween": "https://github.com/Demigiant/dotween.git",
+    "com.unity.textmeshpro": "3.0.6",
     "com.unity.multiplayer.center": "1.0.1",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",

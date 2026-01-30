@@ -1,13 +1,16 @@
 using UnityEngine;
 using System.Collections;
+using Cysharp.Threading.Tasks;
+using DG.Tweening;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
     private Unit player;
     private Unit enemy;
     private Camera mainCam;
-    private GameObject starReward;
-    private TextMesh gameClearText;
+    private UIManager uiManager;
+    private TextMeshPro gameClearText;
 
     // States
     private enum GameState { Move, Battle, Reward, End }
@@ -30,7 +33,7 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         SetupScene();
-        StartCoroutine(GameLoop());
+        GameLoop().Forget();
     }
 
     void SetupScene()
@@ -48,11 +51,13 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            // Reset position
             mainCam.transform.position = new Vector3(0, 0, -10);
             mainCam.orthographic = true;
             mainCam.orthographicSize = 5f;
         }
+
+        mainCam.clearFlags = CameraClearFlags.SolidColor;
+        mainCam.backgroundColor = new Color(0.53f, 0.8f, 0.92f); // Sky Blue
 
         // Light
         if (FindObjectOfType<Light>() == null)
@@ -63,101 +68,126 @@ public class GameManager : MonoBehaviour
             lightObj.transform.rotation = Quaternion.Euler(50, -30, 0);
         }
 
+        // Environment: Ground
+        GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        ground.name = "Ground";
+        ground.transform.position = new Vector3(0, -5.5f, 0);
+        ground.transform.localScale = new Vector3(1000, 10, 10);
+        var groundRend = ground.GetComponent<Renderer>();
+        if(groundRend) groundRend.material.color = new Color(0.2f, 0.6f, 0.2f);
+
+        // Environment: Trees
+        CreateBackgroundProps();
+
+        // UIManager
+        GameObject uiObj = new GameObject("UIManager");
+        uiManager = uiObj.AddComponent<UIManager>();
+
         // Create Player
         GameObject pObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
         pObj.name = "Player";
         player = pObj.AddComponent<Unit>();
-        // Player Stats
-        player.maxHealth = 100;
-        player.moveSpeed = 5;
-        player.attackSpeed = 1.0f;
-        player.attackRange = 1.5f;
-        player.knockbackDist = 1.0f;
-        player.attackPower = 10f;
-        player.Initialize(Team.Player);
-
-        // Ensure player is at 0,0
+        player.Initialize(Team.Player, MaskDatabase.allMasks[0]); // Default mask
         player.transform.position = Vector3.zero;
-
-        // Create Reward Object (Star) - hidden initially
-        starReward = GameObject.CreatePrimitive(PrimitiveType.Sphere); // Sphere looks a bit like a star if yellow :P
-        starReward.name = "RewardStar";
-        starReward.GetComponent<Renderer>().material.color = Color.yellow;
-        starReward.SetActive(false);
 
         // Create Game Clear Text
         GameObject gcObj = new GameObject("GameClearText");
         gcObj.transform.SetParent(mainCam.transform);
         gcObj.transform.localPosition = new Vector3(0, 0, 10);
-        gameClearText = gcObj.AddComponent<TextMesh>();
+
+        gameClearText = gcObj.AddComponent<TextMeshPro>();
         gameClearText.text = "GAME CLEAR";
-        gameClearText.fontSize = 50;
-        gameClearText.anchor = TextAnchor.MiddleCenter;
+        gameClearText.fontSize = 12;
+        gameClearText.alignment = TextAlignmentOptions.Center;
         gameClearText.color = Color.white;
         gcObj.SetActive(false);
     }
 
-    IEnumerator GameLoop()
+    void CreateBackgroundProps()
+    {
+        for(int i = 0; i < 20; i++)
+        {
+            float xPos = Random.Range(-10f, 100f);
+            float zPos = Random.Range(5f, 15f);
+
+            GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            trunk.name = "TreeTrunk";
+            trunk.transform.position = new Vector3(xPos, 0, zPos);
+            trunk.transform.localScale = new Vector3(0.5f, 2f, 0.5f);
+            trunk.GetComponent<Renderer>().material.color = new Color(0.4f, 0.2f, 0.1f);
+
+            GameObject leaves = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            leaves.name = "TreeLeaves";
+            leaves.transform.position = new Vector3(xPos, 2.5f, zPos);
+            leaves.transform.localScale = Vector3.one * 2.5f;
+            leaves.GetComponent<Renderer>().material.color = new Color(0.1f, 0.5f, 0.1f);
+        }
+    }
+
+    async UniTaskVoid GameLoop()
     {
         while (true)
         {
-            yield return StartCoroutine(MovePhase());
+            await MovePhase();
 
             bool isBoss = (stageCount == bossStage);
-            yield return StartCoroutine(BattlePhase(isBoss));
+            await BattlePhase(isBoss);
 
-            yield return StartCoroutine(RewardPhase(isBoss));
+            // Boss clear check
+            if (isBoss)
+            {
+                 currentState = GameState.End;
+                 gameClearText.gameObject.SetActive(true);
+                 gameClearText.transform.DOScale(1.5f, 1f).SetLoopType(LoopType.Yoyo).SetLoops(-1);
+                 await UniTask.Delay(5000);
+                 break;
+            }
 
-            if (isBoss) break; // End Game
-
+            await RewardPhase();
             stageCount++;
         }
     }
 
-    IEnumerator MovePhase()
+    async UniTask MovePhase()
     {
         currentState = GameState.Move;
         Debug.Log("Starting Move Phase");
 
-        // Player moves right 3 screens in 5 seconds
         float screenHeight = mainCam.orthographicSize * 2f;
         float screenWidth = screenHeight * mainCam.aspect;
 
-        float totalDist = screenWidth * 3f;
-        float duration = 5f;
-        float speed = totalDist / duration;
+        float totalDist = screenWidth * 2f; // Shortened a bit for pacing
+        float duration = 4f;
 
         player.isMovingScenario = true;
-        float originalSpeed = player.moveSpeed;
-        player.moveSpeed = speed; // Override speed for this phase
 
-        float elapsed = 0;
-        while (elapsed < duration)
+        float startX = player.transform.position.x;
+        float targetX = startX + totalDist;
+
+        await player.transform.DOMoveX(targetX, duration).SetEase(Ease.Linear).AsyncWaitForCompletion();
+
+        player.isMovingScenario = false;
+        player.state = UnitState.Idle;
+    }
+
+    void LateUpdate()
+    {
+        if (player != null && mainCam != null)
         {
-            // Camera follows player
             Vector3 camPos = mainCam.transform.position;
             camPos.x = player.transform.position.x;
             mainCam.transform.position = camPos;
-
-            elapsed += Time.deltaTime;
-            yield return null;
         }
-
-        player.isMovingScenario = false;
-        player.moveSpeed = originalSpeed; // Restore combat speed
     }
 
-    IEnumerator BattlePhase(bool isBoss)
+    async UniTask BattlePhase(bool isBoss)
     {
         currentState = GameState.Battle;
         Debug.Log($"Starting Battle Phase (Stage {stageCount})");
 
-        // Spawn Enemy
-        // Enemy enters from right side of screen
         float screenHeight = mainCam.orthographicSize * 2f;
         float screenWidth = screenHeight * mainCam.aspect;
 
-        // Spawn slightly offscreen to right relative to camera
         Vector3 camPos = mainCam.transform.position;
         Vector3 spawnPos = new Vector3(camPos.x + screenWidth / 2f + 2f, 0, 0);
 
@@ -166,89 +196,98 @@ public class GameManager : MonoBehaviour
         eObj.transform.position = spawnPos;
         enemy = eObj.AddComponent<Unit>();
 
-        // Enemy Stats
+        // Enemy Stats Scaling
+        enemy.baseMaxHealth = 50 + (stageCount * 20);
+        enemy.baseAttackPower = 5 + (stageCount * 2);
+        enemy.baseMoveSpeed = 3f;
+
         if (isBoss)
         {
             eObj.transform.localScale = Vector3.one * 2f;
-            enemy.maxHealth = 300; // Boss HP
-            enemy.moveSpeed = 2f; // Slower
-            enemy.attackSpeed = 2.0f; // Slower attack
-            enemy.attackRange = 3f; // Longer range
-            enemy.knockbackDist = 2f;
-            enemy.attackPower = 20f;
-            eObj.GetComponent<Renderer>().material.color = new Color(0.5f, 0, 0.5f); // Purple
-        }
-        else
-        {
-            enemy.maxHealth = 50;
-            enemy.moveSpeed = 3f;
-            enemy.attackSpeed = 1.5f;
-            enemy.attackRange = 1.5f;
-            enemy.knockbackDist = 0.5f;
-            enemy.attackPower = 5f;
+            enemy.baseMaxHealth = 500;
+            enemy.baseAttackPower = 25;
+            enemy.baseKnockbackDist = 3f;
         }
 
-        enemy.Initialize(Team.Enemy);
+        enemy.Initialize(Team.Enemy); // Red
 
-        // Override visual for Boss if needed (Initialize resets color)
-        if(isBoss) eObj.GetComponent<Renderer>().material.color = new Color(0.5f, 0, 0.5f);
-
-        // Assign Targets
         player.target = enemy;
         enemy.target = player;
 
-        // Wait for death
-        while (player.currentHealth > 0 && enemy.currentHealth > 0)
-        {
-             // Camera follows player
-             Vector3 cPos = mainCam.transform.position;
-             cPos.x = player.transform.position.x;
-             mainCam.transform.position = cPos;
+        await UniTask.WaitUntil(() => player.currentHealth <= 0 || enemy.currentHealth <= 0);
 
-             yield return null;
-        }
-
-        // Check result
         if (enemy.currentHealth <= 0)
         {
             Debug.Log("Enemy Defeated");
+            enemy.state = UnitState.Die;
+            player.target = null;
         }
         else if (player.currentHealth <= 0)
         {
             Debug.Log("Player Defeated - Game Over");
-            yield break;
+            await UniTask.Yield();
+            // In a real game, restart. Here we might just hang.
+            // Let's just restart the loop or return.
+            return;
         }
 
-        // Cleanup enemy object if not destroyed (Unit disables it)
-        if (enemy != null && enemy.gameObject.activeInHierarchy)
-            enemy.gameObject.SetActive(false);
-
-        // Clean up reference
-        player.target = null;
+        // Wait for death animation
+        await UniTask.Delay(1000);
+        if (enemy != null && enemy.gameObject.activeInHierarchy) enemy.gameObject.SetActive(false);
     }
 
-    IEnumerator RewardPhase(bool isBoss)
+    async UniTask RewardPhase()
     {
         currentState = GameState.Reward;
         Debug.Log("Starting Reward Phase");
 
-        if (isBoss)
+        // Determine Drop
+        float roll = Random.Range(0f, 100f);
+        RewardType type;
+        MaskData maskDrop = null;
+
+        if (roll < 15f) // 15% New Mask
         {
-            // Game Clear
-            gameClearText.gameObject.SetActive(true);
-            currentState = GameState.End;
-            Debug.Log("GAME CLEAR");
-            yield return new WaitForSeconds(5f);
+            type = RewardType.NewMask;
+            maskDrop = MaskDatabase.GetRandomMask(); // Could implement weighted pool later
+        }
+        else if (roll < 50f) // 35% Upgrade
+        {
+            type = RewardType.UpgradeMask;
+        }
+        else // 50% Stat Boost
+        {
+            type = RewardType.StatBoost;
+        }
+
+        int selection = await uiManager.ShowRewardPopup(type, maskDrop);
+
+        // Apply Selection
+        if (type == RewardType.NewMask)
+        {
+            if (selection == 0) // Equip
+            {
+                player.ApplyMask(maskDrop);
+                Debug.Log($"Equipped {maskDrop.name}");
+            }
+            else // Salvage
+            {
+                player.ApplyStatBoost();
+                Debug.Log("Salvaged Mask for Stats");
+            }
+        }
+        else if (type == RewardType.UpgradeMask)
+        {
+            // Upgrade current mask stats slightly
+            player.currentMask.atkBonus += 2f;
+            player.currentMask.hpBonus += 10f;
+            player.RecalculateStats();
+            Debug.Log("Upgraded Current Mask");
         }
         else
         {
-            // Show Star above player
-            starReward.transform.position = player.transform.position + Vector3.up * 2f;
-            starReward.SetActive(true);
-
-            yield return new WaitForSeconds(2f); // Show for 2 seconds
-
-            starReward.SetActive(false);
+            player.ApplyStatBoost();
+            Debug.Log("Applied Stat Boost");
         }
     }
 }
