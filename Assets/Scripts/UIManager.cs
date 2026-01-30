@@ -21,6 +21,11 @@ public class UIManager : MonoBehaviour
     private GameObject replacePanel;
     private Transform replaceContainer;
 
+    // Detail UI
+    private GameObject detailPanel;
+    private TextMeshProUGUI detailName;
+    private TextMeshProUGUI detailDesc;
+
     private int selectedRewardIndex = -1;
     private int selectedReplaceIndex = -1;
 
@@ -30,6 +35,7 @@ public class UIManager : MonoBehaviour
         SetupInventoryHUD();
         SetupRewardPanel();
         SetupReplacePanel();
+        SetupDetailPanel();
     }
 
     void SetupCanvas()
@@ -44,7 +50,6 @@ public class UIManager : MonoBehaviour
 
         canvasObj.AddComponent<GraphicRaycaster>();
 
-        // Event System check
         if (FindObjectOfType<UnityEngine.EventSystems.EventSystem>() == null)
         {
             GameObject eventSystem = new GameObject("EventSystem");
@@ -66,7 +71,6 @@ public class UIManager : MonoBehaviour
         rect.anchoredPosition = new Vector2(0, 50);
         rect.sizeDelta = new Vector2(600, 120);
 
-        // Horizontal Layout
         HorizontalLayoutGroup layout = inventoryPanel.AddComponent<HorizontalLayoutGroup>();
         layout.spacing = 20;
         layout.childAlignment = TextAnchor.MiddleCenter;
@@ -80,21 +84,20 @@ public class UIManager : MonoBehaviour
             Image bg = slot.AddComponent<Image>();
             bg.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
 
-            Button btn = slot.AddComponent<Button>();
-            btn.onClick.AddListener(() => OnInventorySlotClick(index));
+            // Add Handler
+            var handler = slot.AddComponent<InventorySlotHandler>();
+            handler.slotIndex = index;
 
             RectTransform slotRect = slot.GetComponent<RectTransform>();
             slotRect.sizeDelta = new Vector2(100, 100);
 
-            // Icon (Inner)
             GameObject iconObj = new GameObject("Icon");
             iconObj.transform.SetParent(slot.transform, false);
             Image icon = iconObj.AddComponent<Image>();
             icon.rectTransform.sizeDelta = new Vector2(80, 80);
-            icon.color = Color.clear; // Hidden by default
+            icon.color = Color.clear;
             inventorySlots.Add(icon);
 
-            // Highlight (Border)
             GameObject highlightObj = new GameObject("Highlight");
             highlightObj.transform.SetParent(slot.transform, false);
             Image hImg = highlightObj.AddComponent<Image>();
@@ -104,11 +107,6 @@ public class UIManager : MonoBehaviour
             highlightObj.SetActive(false);
             inventoryHighlights.Add(highlightObj);
         }
-    }
-
-    void OnInventorySlotClick(int index)
-    {
-        GameManager.Instance.EquipMask(index);
     }
 
     public void UpdateInventoryUI()
@@ -133,6 +131,33 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    // --- Detail Panel ---
+
+    void SetupDetailPanel()
+    {
+        detailPanel = CreatePanel(mainCanvas.transform, "DetailPanel", new Color(0, 0, 0, 0.9f));
+        detailPanel.SetActive(false);
+
+        // Make it overlay everything
+        detailPanel.transform.SetAsLastSibling();
+
+        detailName = CreateText(detailPanel.transform, "Name", "Mask Name", 50, new Vector2(0, 150));
+        detailDesc = CreateText(detailPanel.transform, "Desc", "Stats...", 30, new Vector2(0, 0));
+    }
+
+    public void ShowMaskDetail(MaskData mask)
+    {
+        detailPanel.SetActive(true);
+        detailPanel.transform.SetAsLastSibling();
+        detailName.text = mask.name;
+        detailDesc.text = $"{mask.description}\n\n<color=#FFFF00>STATS</color>\nATK: {mask.atkBonus}\nHP: {mask.hpBonus}\nSPD: {mask.moveSpeedBonus}\nRNG: {mask.rangeBonus}";
+    }
+
+    public void HideMaskDetail()
+    {
+        detailPanel.SetActive(false);
+    }
+
     // --- Reward Panel ---
 
     void SetupRewardPanel()
@@ -140,10 +165,8 @@ public class UIManager : MonoBehaviour
         rewardPanel = CreatePanel(mainCanvas.transform, "RewardPanel", new Color(0, 0, 0, 0.9f));
         rewardPanel.SetActive(false);
 
-        // Title
         CreateText(rewardPanel.transform, "Title", "CHOOSE YOUR REWARD", 60, new Vector2(0, 400));
 
-        // Container
         GameObject container = new GameObject("Container");
         container.transform.SetParent(rewardPanel.transform, false);
         RectTransform rect = container.AddComponent<RectTransform>();
@@ -162,11 +185,10 @@ public class UIManager : MonoBehaviour
     {
         selectedRewardIndex = -1;
         rewardPanel.SetActive(true);
+        rewardPanel.transform.SetAsLastSibling();
 
-        // Clear existing children
         foreach (Transform child in rewardContainer) Destroy(child.gameObject);
 
-        // Create Cards
         for (int i = 0; i < options.Count; i++)
         {
             int index = i;
@@ -186,7 +208,7 @@ public class UIManager : MonoBehaviour
         card.transform.SetParent(rewardContainer, false);
 
         Image bg = card.AddComponent<Image>();
-        bg.color = new Color(0.3f, 0.3f, 0.3f); // Dark Grey
+        bg.color = new Color(0.3f, 0.3f, 0.3f);
 
         Button btn = card.AddComponent<Button>();
         btn.onClick.AddListener(() => selectedRewardIndex = index);
@@ -195,7 +217,6 @@ public class UIManager : MonoBehaviour
         le.preferredWidth = 400;
         le.preferredHeight = 550;
 
-        // Content
         string titleText = "";
         string descText = opt.description;
         Color visualColor = Color.white;
@@ -215,7 +236,6 @@ public class UIManager : MonoBehaviour
         {
             titleText = "STAT BOOST";
             visualColor = Color.green;
-            // Format effects
             descText = "Permanent Stats:\n";
             foreach(var kv in opt.statData.effects)
             {
@@ -226,7 +246,6 @@ public class UIManager : MonoBehaviour
         CreateText(card.transform, "Title", titleText, 40, new Vector2(0, 200));
         CreateText(card.transform, "Desc", descText, 24, new Vector2(0, -50));
 
-        // Icon visualization
         GameObject icon = new GameObject("Icon");
         icon.transform.SetParent(card.transform, false);
         Image iconImg = icon.AddComponent<Image>();
@@ -259,20 +278,18 @@ public class UIManager : MonoBehaviour
 
         replaceContainer = container.transform;
 
-        // Cancel Button
         Button cancelBtn = CreateButton(replacePanel.transform, "CancelBtn", "CANCEL (Keep Old)", new Vector2(0, -300));
-        cancelBtn.onClick.AddListener(() => selectedReplaceIndex = -2); // -2 Cancel
+        cancelBtn.onClick.AddListener(() => selectedReplaceIndex = -2);
     }
 
     public async UniTask<int> ShowReplaceMaskPopup(MaskData newMask)
     {
         selectedReplaceIndex = -1;
         replacePanel.SetActive(true);
+        replacePanel.transform.SetAsLastSibling();
 
-        // Clear container
         foreach(Transform t in replaceContainer) Destroy(t.gameObject);
 
-        // Create buttons for each inventory item
         var inv = GameManager.Instance.inventory;
         for (int i = 0; i < inv.Count; i++)
         {
