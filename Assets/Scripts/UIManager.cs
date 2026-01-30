@@ -135,14 +135,27 @@ public class UIManager : MonoBehaviour
 
     void SetupDetailPanel()
     {
-        detailPanel = CreatePanel(mainCanvas.transform, "DetailPanel", new Color(0, 0, 0, 0.9f));
+        // Create panel with custom positioning (not full screen)
+        detailPanel = new GameObject("DetailPanel");
+        detailPanel.transform.SetParent(mainCanvas.transform, false);
+        Image img = detailPanel.AddComponent<Image>();
+        img.color = new Color(0, 0, 0, 0.9f);
+        
+        // Position at bottom with fixed height
+        RectTransform rect = detailPanel.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0, 0);
+        rect.anchorMax = new Vector2(1, 0);
+        rect.pivot = new Vector2(0.5f, 0);
+        rect.anchoredPosition = new Vector2(0, 0);
+        rect.sizeDelta = new Vector2(0, 300); // Fixed height of 300 pixels
+        
         detailPanel.SetActive(false);
 
         // Make it overlay everything
         detailPanel.transform.SetAsLastSibling();
 
-        detailName = CreateText(detailPanel.transform, "Name", "Mask Name", 50, new Vector2(0, 150));
-        detailDesc = CreateText(detailPanel.transform, "Desc", "Stats...", 30, new Vector2(0, 0));
+        detailName = CreateText(detailPanel.transform, "Name", "Mask Name", 36, new Vector2(0, 60));
+        detailDesc = CreateText(detailPanel.transform, "Desc", "Stats...", 22, new Vector2(0, -50));
     }
 
     public void ShowMaskDetail(MaskData mask)
