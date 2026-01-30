@@ -1,0 +1,7 @@
+ID,Name,Effects
+stat_power,Power Deal,ATK:20;HP:-10
+stat_tank,Tank Deal,HP:20;ATK:-10
+stat_speed,Swift Deal,ASP:20;HP:-10
+stat_frenzy,Frenzy,ATK:10;ASP:10;HP:-10
+stat_glass,Glass Cannon,ATK:20;HP:-20
+stat_giant,Giant Growth,HP:30;ASP:-20

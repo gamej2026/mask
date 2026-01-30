@@ -12,7 +12,7 @@ public class Unit : MonoBehaviour
     // Base Stats
     public float baseMaxHealth = 100f;
     public float baseMoveSpeed = 5f;
-    public float baseAttackSpeed = 1f; // delay between attacks
+    public float baseAttackSpeed = 1f;
     public float baseAttackRange = 1.5f;
     public float baseKnockbackDist = 1f;
     public float baseAttackPower = 10f;
@@ -30,10 +30,10 @@ public class Unit : MonoBehaviour
 
     public float currentHealth;
     private float lastAttackTime = 0f;
-    private float stunDuration = 0.5f; // Default hit stun
+    private float stunDuration = 0.5f;
 
     public Unit target;
-    public bool isMovingScenario = false; // Controlled by GameManager via DOTween
+    public bool isMovingScenario = false;
 
     private TextMeshPro healthText;
     private Renderer rend;
@@ -42,11 +42,17 @@ public class Unit : MonoBehaviour
     // Mask Logic
     public MaskData currentMask;
 
+    // Buff Logic
+    private int buffStacks = 0;
+
     void Awake()
     {
         rend = GetComponent<Renderer>();
+        CreateHealthText();
+    }
 
-        // Add Health Text (TMP)
+    void CreateHealthText()
+    {
         GameObject textObj = new GameObject("HealthText");
         textObj.transform.SetParent(transform);
         textObj.transform.localPosition = Vector3.up * 1.5f;
@@ -56,40 +62,55 @@ public class Unit : MonoBehaviour
         healthText.color = Color.white;
     }
 
-    public void Initialize(Team _team, MaskData mask = null)
+    // Initialize for Player
+    public void InitializePlayer(MaskData mask)
     {
-        team = _team;
-
-        // Set Default Mask if none
-        if (mask == null)
-        {
-            if (team == Team.Player)
-                currentMask = MaskDatabase.allMasks[0].Copy();
-            else
-                currentMask = null;
-        }
-        else
-        {
-            currentMask = mask;
-        }
+        team = Team.Player;
+        currentMask = mask;
+        buffStacks = 0;
 
         RecalculateStats();
-
         currentHealth = maxHealth;
         state = UnitState.Idle;
 
         if (rend != null)
         {
-            // Use mask color for player, Red for enemy
-            if (team == Team.Player)
-                originalColor = currentMask.color;
-            else
-                originalColor = Color.red;
-
+            originalColor = currentMask.color;
             rend.material.color = originalColor;
         }
-
         UpdateVisuals();
+    }
+
+    // Initialize for Monster
+    public void InitializeMonster(MonsterData data)
+    {
+        team = Team.Enemy;
+        currentMask = null;
+
+        baseMaxHealth = data.hp;
+        baseAttackPower = data.atk;
+        baseMoveSpeed = data.speed;
+        baseAttackRange = data.range;
+        baseKnockbackDist = data.knockback;
+        transform.localScale = Vector3.one * data.scale;
+
+        RecalculateStats(); // Basically just sets base to current
+        currentHealth = maxHealth;
+        state = UnitState.Idle;
+
+        if (rend != null)
+        {
+            originalColor = data.color;
+            rend.material.color = originalColor;
+        }
+        UpdateVisuals();
+    }
+
+    // Fallback/Legacy Initialize
+    public void Initialize(Team _team, MaskData mask = null)
+    {
+        if (_team == Team.Player) InitializePlayer(mask ?? GameData.allMasks[0]);
+        else InitializeMonster(new MonsterData { hp=100, atk=10, speed=2, range=1.5f, knockback=1, scale=1, color=Color.red });
     }
 
     public void RecalculateStats()
@@ -109,17 +130,19 @@ public class Unit : MonoBehaviour
             atkBonus = currentMask.atkBonus;
         }
 
-        // Start with base
+        // Apply Buffs (1 Stack = +1 Attack)
+        atkBonus += buffStacks;
+
         maxHealth = baseMaxHealth + hpBonus;
         moveSpeed = baseMoveSpeed + moveSpeedBonus;
+
         attackSpeed = baseAttackSpeed + atkSpeedBonus;
-        if (attackSpeed < 0.1f) attackSpeed = 0.1f; // Cap speed
+        if (attackSpeed < 0.1f) attackSpeed = 0.1f;
 
         attackRange = baseAttackRange + rangeBonus;
         attackPower = baseAttackPower + atkBonus;
-        knockbackDist = baseKnockbackDist; // Could be modified by mask too
+        knockbackDist = baseKnockbackDist;
 
-        // Skill modifiers
         if (currentMask != null && currentMask.skill == SkillType.KnockbackBoost)
         {
             knockbackDist += 1.0f;
@@ -129,9 +152,9 @@ public class Unit : MonoBehaviour
     public void ApplyMask(MaskData newMask)
     {
         currentMask = newMask;
+        buffStacks = 0; // Reset buffs on switch? Usually yes.
         RecalculateStats();
 
-        // Update visual color
         if (team == Team.Player)
         {
             originalColor = currentMask.color;
@@ -139,39 +162,43 @@ public class Unit : MonoBehaviour
         }
     }
 
-    public void ApplyStatBoost()
+    public void ApplyStatBoost(string stat, float value)
     {
-        // Simple permanent boost to base stats
-        baseAttackPower += 2f;
-        baseMaxHealth += 10f;
+        // Value is percentage (e.g. 20 means +20% base)
+        // Or we can modify base stats permanently as per previous logic.
+        // Prompt said: "Stat Upgrade... Atk+20%, HP-10%"
+        // Implementation: Modify Base Stats.
+
+        float multiplier = 1f + (value / 100f);
+
+        if (stat == "HP")
+        {
+            baseMaxHealth *= multiplier;
+            currentHealth *= multiplier; // Adjust current HP too
+        }
+        else if (stat == "ATK")
+        {
+            baseAttackPower *= multiplier;
+        }
+        else if (stat == "ASP" || stat == "SPD") // Attack Speed (Acceleration logic in doc: 100 accel -> higher speed)
+        {
+            // Doc: Attack Speed Acceleration.
+            // Current implementation uses 'delay' (lower is faster).
+            // If value is +20 (Speed Up), delay should decrease.
+            // Simple: baseAttackSpeed /= multiplier;
+            baseAttackSpeed /= multiplier;
+        }
+
         RecalculateStats();
-        currentHealth += 10f; // Heal a bit
         UpdateVisuals();
     }
 
     void Update()
     {
         if (state == UnitState.Die) return;
+        if (state == UnitState.Hit) return;
 
-        // FSM
-        switch (state)
-        {
-            case UnitState.Hit:
-                // Do nothing, waiting for stun to end
-                break;
-
-            case UnitState.Attack:
-                // Managed by Attack coroutine mostly
-                // If animation was here, we'd wait.
-                // Currently Attack is instant + cooldown, so we go back to Idle/Move immediately?
-                // Let's keep logic simple: if cooldown ready and in range -> Attack.
-                break;
-
-            case UnitState.Move:
-            case UnitState.Idle:
-                LogicLoop();
-                break;
-        }
+        LogicLoop();
     }
 
     void LogicLoop()
@@ -198,7 +225,6 @@ public class Unit : MonoBehaviour
             }
             else
             {
-                // Waiting for cooldown, stay idle (don't move)
                 state = UnitState.Idle;
             }
         }
@@ -222,29 +248,89 @@ public class Unit : MonoBehaviour
 
         // Visual
         Vector3 punchDir = (target.transform.position - transform.position).normalized;
-        await transform.DOPunchPosition(punchDir * 0.5f, 0.2f, 10, 1).AsyncWaitForCompletion();
 
-        // Check range again before damage
-        if (target != null && target.state != UnitState.Die)
+        // Attack Animation (Punch)
+        // For Player (Projectile), maybe punch isn't needed, but keeps it responsive.
+        await transform.DOPunchPosition(punchDir * 0.2f, 0.1f, 10, 1).AsyncWaitForCompletion();
+
+        if (team == Team.Player)
         {
-            float dist = Vector3.Distance(transform.position, target.transform.position);
-            if (dist <= attackRange + 0.5f)
-            {
-                target.TakeDamage(attackPower, knockbackDist);
+            SpawnProjectile();
 
-                // Double Strike Skill
-                if (currentMask != null && currentMask.skill == SkillType.DoubleStrike)
+            // Mask Action Effects (Triggered on Attack)
+            if (currentMask != null)
+            {
+                if (currentMask.actionType == ActionType.Heal)
                 {
-                    await UniTask.Delay(100);
-                    if(target != null && target.state != UnitState.Die)
-                        target.TakeDamage(attackPower * 0.5f, 0); // Mini hit
+                    Heal(attackPower * 2f);
+                }
+                else if (currentMask.actionType == ActionType.Buff)
+                {
+                    AddBuff();
+                }
+            }
+
+            // Double Strike Skill (fires second projectile)
+            if (currentMask != null && currentMask.skill == SkillType.DoubleStrike)
+            {
+                await UniTask.Delay(100);
+                SpawnProjectile(0.5f); // 50% damage
+            }
+        }
+        else // Enemy (Melee / HitScan)
+        {
+            if (target != null && target.state != UnitState.Die)
+            {
+                float dist = Vector3.Distance(transform.position, target.transform.position);
+                if (dist <= attackRange + 0.5f)
+                {
+                    target.TakeDamage(attackPower, knockbackDist);
                 }
             }
         }
 
-        // Return to Idle to re-evaluate
         if(state != UnitState.Hit && state != UnitState.Die)
             state = UnitState.Idle;
+    }
+
+    void SpawnProjectile(float damageMultiplier = 1.0f)
+    {
+        if (target == null) return;
+
+        GameObject projObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        projObj.name = "Projectile";
+        projObj.transform.position = transform.position + Vector3.up * 0.5f; // Center
+        projObj.transform.localScale = Vector3.one * 0.5f;
+
+        // Physics Setup
+        var col = projObj.GetComponent<Collider>();
+        if(col) col.isTrigger = true;
+
+        var rb = projObj.AddComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.useGravity = false;
+
+        // Color
+        var rend = projObj.GetComponent<Renderer>();
+        rend.material.color = currentMask != null ? currentMask.color : Color.yellow;
+
+        Projectile p = projObj.AddComponent<Projectile>();
+        p.Initialize(this, target, attackPower * damageMultiplier, knockbackDist);
+    }
+
+    void Heal(float amount)
+    {
+        currentHealth += amount;
+        if (currentHealth > maxHealth) currentHealth = maxHealth;
+        UpdateVisuals();
+        ShowText($"+{amount:F0}", Color.green);
+    }
+
+    void AddBuff()
+    {
+        buffStacks++;
+        RecalculateStats();
+        ShowText("BUFF!", Color.cyan);
     }
 
     public void TakeDamage(float damage, float knockback)
@@ -253,8 +339,7 @@ public class Unit : MonoBehaviour
 
         currentHealth -= damage;
         UpdateVisuals();
-
-        ShowDamageText(damage);
+        ShowText($"-{damage:F0}", Color.red);
 
         if (currentHealth <= 0)
         {
@@ -263,7 +348,6 @@ public class Unit : MonoBehaviour
         }
         else
         {
-            // Enter Hit/Stun state
             HitRoutine(knockback).Forget();
         }
     }
@@ -272,15 +356,14 @@ public class Unit : MonoBehaviour
     {
         state = UnitState.Hit;
 
+        // Direction away from attacker? Or Fixed?
+        // Simple: Player knocked left, Enemy knocked right.
         Vector3 knockDir = (team == Team.Player) ? Vector3.left : Vector3.right;
 
-        // Knockback
         transform.DOMove(transform.position + knockDir * distance, 0.2f).SetEase(Ease.OutBack);
-
-        // Stiff color
         rend.material.color = Color.white;
 
-        await UniTask.Delay(System.TimeSpan.FromSeconds(stunDuration)); // Stun duration
+        await UniTask.Delay(System.TimeSpan.FromSeconds(stunDuration));
 
         if (state != UnitState.Die)
         {
@@ -292,22 +375,21 @@ public class Unit : MonoBehaviour
     void Die()
     {
         state = UnitState.Die;
-        // Fade out
         rend.material.DOFade(0, 0.5f).OnComplete(() => gameObject.SetActive(false));
     }
 
-    void ShowDamageText(float damage)
+    void ShowText(string msg, Color col)
     {
-        GameObject dmgObj = new GameObject("DmgText");
-        dmgObj.transform.position = transform.position + Vector3.up * 1f;
-        var tmp = dmgObj.AddComponent<TextMeshPro>();
-        tmp.text = $"-{damage:F0}";
+        GameObject txtObj = new GameObject("PopupText");
+        txtObj.transform.position = transform.position + Vector3.up * 1f;
+        var tmp = txtObj.AddComponent<TextMeshPro>();
+        tmp.text = msg;
         tmp.fontSize = 4;
-        tmp.color = Color.red;
+        tmp.color = col;
         tmp.alignment = TextAlignmentOptions.Center;
 
-        dmgObj.transform.DOMoveY(dmgObj.transform.position.y + 2f, 1f);
-        tmp.DOFade(0, 1f).OnComplete(() => Destroy(dmgObj));
+        txtObj.transform.DOMoveY(txtObj.transform.position.y + 2f, 1f);
+        tmp.DOFade(0, 1f).OnComplete(() => Destroy(txtObj));
     }
 
     void UpdateVisuals()

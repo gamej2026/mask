@@ -1,28 +1,36 @@
 using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
 
 public class GameManager : MonoBehaviour
 {
-    private Unit player;
+    public static GameManager Instance;
+
+    public Unit player;
     private Unit enemy;
     private Camera mainCam;
-    private UIManager uiManager;
+    public UIManager uiManager;
     private TextMeshPro gameClearText;
 
     // States
-    private enum GameState { Move, Battle, Reward, End }
-    private GameState currentState;
+    public enum GameState { Move, Battle, Reward, End }
+    public GameState currentState;
 
-    private int stageCount = 1;
-    private const int bossStage = 4;
+    public int stageCount = 1;
+    private const int bossStage = 4; // Should be dynamic based on StageData count ideally
+
+    // Inventory
+    public List<MaskData> inventory = new List<MaskData>();
+    public int maxInventorySize = 4;
+    public int equippedMaskIndex = -1;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void InitializeGame()
     {
-        // Check if GameManager exists
+        GameData.Initialize();
+
         if (FindObjectOfType<GameManager>() == null)
         {
             GameObject gmObj = new GameObject("GameManager");
@@ -30,10 +38,20 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    void Awake()
+    {
+        Instance = this;
+    }
+
     void Start()
     {
-        MaskDatabase.Initialize();
         SetupScene();
+
+        // Give default mask
+        MaskData defaultMask = GameData.allMasks.Count > 0 ? GameData.allMasks[0].Copy() : new MaskData();
+        AddMaskToInventory(defaultMask);
+        EquipMask(0);
+
         GameLoop().Forget();
     }
 
@@ -58,7 +76,7 @@ public class GameManager : MonoBehaviour
         }
 
         mainCam.clearFlags = CameraClearFlags.SolidColor;
-        mainCam.backgroundColor = new Color(0.53f, 0.8f, 0.92f); // Sky Blue
+        mainCam.backgroundColor = new Color(0.53f, 0.8f, 0.92f);
 
         // Light
         if (FindObjectOfType<Light>() == null)
@@ -69,7 +87,7 @@ public class GameManager : MonoBehaviour
             lightObj.transform.rotation = Quaternion.Euler(50, -30, 0);
         }
 
-        // Environment: Ground
+        // Environment
         GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
         ground.name = "Ground";
         ground.transform.position = new Vector3(0, -5.5f, 0);
@@ -77,7 +95,6 @@ public class GameManager : MonoBehaviour
         var groundRend = ground.GetComponent<Renderer>();
         if(groundRend) groundRend.material.color = new Color(0.2f, 0.6f, 0.2f);
 
-        // Environment: Trees
         CreateBackgroundProps();
 
         // UIManager
@@ -88,14 +105,13 @@ public class GameManager : MonoBehaviour
         GameObject pObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
         pObj.name = "Player";
         player = pObj.AddComponent<Unit>();
-        player.Initialize(Team.Player, MaskDatabase.allMasks[0]); // Default mask
+        // Initialize will be called after equipping mask
         player.transform.position = Vector3.zero;
 
-        // Create Game Clear Text
+        // Game Clear Text
         GameObject gcObj = new GameObject("GameClearText");
         gcObj.transform.SetParent(mainCam.transform);
         gcObj.transform.localPosition = new Vector3(0, 0, 10);
-
         gameClearText = gcObj.AddComponent<TextMeshPro>();
         gameClearText.text = "GAME CLEAR";
         gameClearText.fontSize = 12;
@@ -125,14 +141,84 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // --- Inventory System ---
+
+    public void EquipMask(int index)
+    {
+        if (index < 0 || index >= inventory.Count) return;
+
+        equippedMaskIndex = index;
+        MaskData mask = inventory[index];
+        player.InitializePlayer(mask);
+
+        Debug.Log($"Equipped Mask: {mask.name}");
+
+        // Update UI if needed (via UIManager)
+        if(uiManager != null) uiManager.UpdateInventoryUI();
+    }
+
+    public bool AddMaskToInventory(MaskData mask)
+    {
+        if (inventory.Count < maxInventorySize)
+        {
+            inventory.Add(mask);
+            if(uiManager != null) uiManager.UpdateInventoryUI();
+            return true;
+        }
+        return false;
+    }
+
+    public void ReplaceMaskInInventory(int index, MaskData newMask)
+    {
+        if (index < 0 || index >= inventory.Count) return;
+        inventory[index] = newMask;
+        if (index == equippedMaskIndex)
+        {
+            EquipMask(index); // Re-equip new one
+        }
+        if(uiManager != null) uiManager.UpdateInventoryUI();
+    }
+
+    public void RemoveMask(int index)
+    {
+        if (index < 0 || index >= inventory.Count) return;
+        inventory.RemoveAt(index);
+        if (equippedMaskIndex == index)
+        {
+            // Equipped mask removed?
+            equippedMaskIndex = -1;
+            // Fallback to 0 if exists
+            if (inventory.Count > 0) EquipMask(0);
+        }
+        else if (equippedMaskIndex > index)
+        {
+            equippedMaskIndex--;
+        }
+        if(uiManager != null) uiManager.UpdateInventoryUI();
+    }
+
+    // --- Game Loop ---
+
     async UniTaskVoid GameLoop()
     {
         while (true)
         {
             await MovePhase();
 
-            bool isBoss = (stageCount == bossStage);
-            await BattlePhase(isBoss);
+            // Check Stage Data
+            StageData stageData = GameData.GetStage(stageCount);
+            if (stageData == null)
+            {
+                // No more stages? Game Over or Loop?
+                // For now, let's just loop or show clear
+                Debug.Log("No more stages defined.");
+                currentState = GameState.End;
+                gameClearText.gameObject.SetActive(true);
+                break;
+            }
+
+            bool isBoss = (stageCount == 4); // Hardcoded for now based on prompt, or check StageData
+            await BattlePhase(stageData);
 
             if (player.currentHealth <= 0)
             {
@@ -141,7 +227,6 @@ public class GameManager : MonoBehaviour
                 break;
             }
 
-            // Boss clear check
             if (isBoss)
             {
                  currentState = GameState.End;
@@ -163,8 +248,7 @@ public class GameManager : MonoBehaviour
 
         float screenHeight = mainCam.orthographicSize * 2f;
         float screenWidth = screenHeight * mainCam.aspect;
-
-        float totalDist = screenWidth * 2f; // Shortened a bit for pacing
+        float totalDist = screenWidth * 2f;
         float duration = 4f;
 
         player.isMovingScenario = true;
@@ -188,60 +272,48 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    async UniTask BattlePhase(bool isBoss)
+    async UniTask BattlePhase(StageData stageData)
     {
         currentState = GameState.Battle;
         Debug.Log($"Starting Battle Phase (Stage {stageCount})");
 
-        float screenHeight = mainCam.orthographicSize * 2f;
-        float screenWidth = screenHeight * mainCam.aspect;
-
-        Vector3 camPos = mainCam.transform.position;
-        Vector3 spawnPos = new Vector3(camPos.x + screenWidth / 2f + 2f, 0, 0);
-
-        GameObject eObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        eObj.name = isBoss ? "FinalBoss" : "Monster";
-        eObj.transform.position = spawnPos;
-        enemy = eObj.AddComponent<Unit>();
-
-        // Enemy Stats Scaling
-        enemy.baseMaxHealth = 50 + (stageCount * 20);
-        enemy.baseAttackPower = 5 + (stageCount * 2);
-        enemy.baseMoveSpeed = 3f;
-
-        if (isBoss)
+        foreach (string monId in stageData.monsterIds)
         {
-            eObj.transform.localScale = Vector3.one * 2f;
-            enemy.baseMaxHealth = 500;
-            enemy.baseAttackPower = 25;
-            enemy.baseKnockbackDist = 3f;
-        }
+            MonsterData mData = GameData.GetMonster(monId);
+            if (mData == null) continue;
 
-        enemy.Initialize(Team.Enemy); // Red
+            // Spawn
+            float screenHeight = mainCam.orthographicSize * 2f;
+            float screenWidth = screenHeight * mainCam.aspect;
+            Vector3 camPos = mainCam.transform.position;
+            Vector3 spawnPos = new Vector3(camPos.x + screenWidth / 2f + 2f, 0, 0);
 
-        player.target = enemy;
-        enemy.target = player;
+            GameObject eObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            eObj.name = mData.name;
+            eObj.transform.position = spawnPos;
+            enemy = eObj.AddComponent<Unit>();
+            enemy.InitializeMonster(mData);
 
-        await UniTask.WaitUntil(() => player.currentHealth <= 0 || enemy.currentHealth <= 0);
+            player.target = enemy;
+            enemy.target = player;
 
-        if (enemy.currentHealth <= 0)
-        {
-            Debug.Log("Enemy Defeated");
+            // Move enemy into view? The prompt says "Enemy enters screen".
+            // Currently spawnPos is offscreen.
+            // Existing logic: "Enemy enters screen" (Move 3x dist?).
+            // User Design: "Enemy enters screen... Player Stops... Combat".
+            // My Unit code has Move behavior if target is far. So Enemy will move to Player.
+            // Player will move to Enemy. They meet and fight.
+
+            // Wait for death
+            await UniTask.WaitUntil(() => player.currentHealth <= 0 || enemy.currentHealth <= 0);
+
+            if (player.currentHealth <= 0) return; // Lose
+
             enemy.state = UnitState.Die;
             player.target = null;
+            await UniTask.Delay(1000);
+            if (enemy != null) Destroy(enemy.gameObject);
         }
-        else if (player.currentHealth <= 0)
-        {
-            Debug.Log("Player Defeated - Game Over");
-            await UniTask.Yield();
-            // In a real game, restart. Here we might just hang.
-            // Let's just restart the loop or return.
-            return;
-        }
-
-        // Wait for death animation
-        await UniTask.Delay(1000);
-        if (enemy != null && enemy.gameObject.activeInHierarchy) enemy.gameObject.SetActive(false);
     }
 
     async UniTask RewardPhase()
@@ -249,53 +321,108 @@ public class GameManager : MonoBehaviour
         currentState = GameState.Reward;
         Debug.Log("Starting Reward Phase");
 
-        // Determine Drop
-        float roll = Random.Range(0f, 100f);
-        RewardType type;
-        MaskData maskDrop = null;
+        // Generate 3 Options
+        List<RewardOption> options = new List<RewardOption>();
+        int emptySlots = maxInventorySize - inventory.Count;
+        float newMaskChance = 15f + (15f * emptySlots);
 
-        if (roll < 15f) // 15% New Mask
-        {
-            type = RewardType.NewMask;
-            maskDrop = MaskDatabase.GetRandomMask(); // Could implement weighted pool later
-        }
-        else if (roll < 50f) // 35% Upgrade
-        {
-            type = RewardType.UpgradeMask;
-        }
-        else // 50% Stat Boost
-        {
-            type = RewardType.StatBoost;
-        }
+        // Probabilities for the remaining percent
+        // If NewMask = 30%, Remainder = 70%.
+        // Upgrade = 70 * 0.7 = 49%
+        // Stat = 70 * 0.3 = 21%
 
-        int selection = await uiManager.ShowRewardPopup(type, maskDrop);
+        float upgradeChance = (100f - newMaskChance) * 0.7f;
 
-        // Apply Selection
-        if (type == RewardType.NewMask)
+        // Loop 3 times to generate 3 independent cards
+        for(int i=0; i<3; i++)
         {
-            if (selection == 0) // Equip
+            float roll = Random.Range(0f, 100f);
+            RewardOption opt = new RewardOption();
+
+            if (roll < newMaskChance)
             {
-                player.ApplyMask(maskDrop);
-                Debug.Log($"Equipped {maskDrop.name}");
+                opt.type = RewardType.NewMask;
+                opt.maskData = GameData.GetRandomMask().Copy();
+                opt.description = "New Mask";
             }
-            else // Salvage
+            else if (roll < newMaskChance + upgradeChance)
             {
-                player.ApplyStatBoost();
-                Debug.Log("Salvaged Mask for Stats");
+                opt.type = RewardType.UpgradeMask;
+                opt.description = "Upgrade Equipped Mask";
             }
+            else
+            {
+                opt.type = RewardType.StatBoost;
+                opt.statData = GameData.GetRandomStatReward();
+                opt.description = opt.statData.name;
+            }
+            options.Add(opt);
         }
-        else if (type == RewardType.UpgradeMask)
+
+        int selectedIndex = await uiManager.ShowRewardSelection(options);
+
+        if (selectedIndex < 0 || selectedIndex >= options.Count)
         {
-            // Upgrade current mask stats slightly
-            player.currentMask.atkBonus += 2f;
-            player.currentMask.hpBonus += 10f;
-            player.RecalculateStats();
-            Debug.Log("Upgraded Current Mask");
+            // Default to 0 or skip? Should not happen if UI locks.
+            selectedIndex = 0;
+        }
+
+        RewardOption choice = options[selectedIndex];
+
+        if (choice.type == RewardType.NewMask)
+        {
+            bool added = AddMaskToInventory(choice.maskData);
+            if (!added)
+            {
+                Debug.Log("Inventory Full - Showing Replace UI");
+                int replaceIdx = await uiManager.ShowReplaceMaskPopup(choice.maskData);
+
+                if (replaceIdx >= 0) // Valid slot selected
+                {
+                    ReplaceMaskInInventory(replaceIdx, choice.maskData);
+                    Debug.Log($"Replaced Mask at slot {replaceIdx}");
+                }
+                else
+                {
+                    Debug.Log("Discarded New Mask");
+                }
+            }
+            else
+            {
+                 Debug.Log($"Added {choice.maskData.name} to Inventory");
+            }
         }
         else
         {
-            player.ApplyStatBoost();
-            Debug.Log("Applied Stat Boost");
+            ApplyReward(choice);
+        }
+    }
+
+    void ApplyReward(RewardOption choice)
+    {
+        if (choice.type == RewardType.UpgradeMask)
+        {
+            if (equippedMaskIndex >= 0 && equippedMaskIndex < inventory.Count)
+            {
+                // Upgrade currently equipped mask
+                MaskData m = inventory[equippedMaskIndex];
+                m.atkBonus += 2f;
+                m.hpBonus += 10f;
+                player.ApplyMask(m); // Re-apply to update stats
+                Debug.Log("Upgraded Equipped Mask");
+            }
+        }
+        else if (choice.type == RewardType.StatBoost)
+        {
+            // Apply Stat Boost Effects
+            if (choice.statData != null)
+            {
+                foreach(var kvp in choice.statData.effects)
+                {
+                    player.ApplyStatBoost(kvp.Key, kvp.Value);
+                }
+                Debug.Log($"Applied Stat Boost: {choice.statData.name}");
+            }
         }
     }
 }
