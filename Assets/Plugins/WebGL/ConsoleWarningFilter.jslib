@@ -5,11 +5,11 @@
 mergeInto(LibraryManager.library, {
     InitializeConsoleWarningFilter: function () {
         // Store the original console.warn function
-        var originalWarn = console.warn;
+        const originalWarn = console.warn;
         
         // Override console.warn to filter specific warnings
         console.warn = function() {
-            var msg = arguments[0];
+            const msg = arguments[0];
             
             // Filter out the known non-critical WebGL warnings
             if (typeof msg === 'string') {
