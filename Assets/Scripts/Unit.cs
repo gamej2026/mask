@@ -103,7 +103,42 @@ public class Unit : MonoBehaviour
             originalColor = data.color;
             rend.material.color = originalColor;
         }
+        
+        // Adjust collider height to ensure projectiles can hit regardless of scale
+        // Projectiles fly at 0.5 units above ground, so collider must extend to that height
+        AdjustColliderForProjectileHit();
+        
         UpdateVisuals();
+    }
+    
+    void AdjustColliderForProjectileHit()
+    {
+        // Projectile flight height is 0.5 units above ground (transform.position.y)
+        float projectileHeight = 0.5f;
+        
+        BoxCollider boxCollider = GetComponent<BoxCollider>();
+        if (boxCollider != null)
+        {
+            // Calculate current collider height based on scale
+            float currentColliderHeight = boxCollider.size.y * transform.localScale.y;
+            
+            // Calculate minimum collider height needed (projectileHeight * 2 to cover from center)
+            float minColliderHeight = projectileHeight * 2f;
+            
+            // If current collider is shorter than needed, extend it
+            if (currentColliderHeight < minColliderHeight)
+            {
+                // Adjust collider size to reach projectile height
+                Vector3 newSize = boxCollider.size;
+                newSize.y = minColliderHeight / transform.localScale.y;
+                boxCollider.size = newSize;
+                
+                // Adjust collider center to keep bottom at ground level
+                Vector3 newCenter = boxCollider.center;
+                newCenter.y = projectileHeight / transform.localScale.y;
+                boxCollider.center = newCenter;
+            }
+        }
     }
 
     // Fallback/Legacy Initialize
