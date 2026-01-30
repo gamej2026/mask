@@ -138,7 +138,7 @@ public class GameManager : MonoBehaviour
             {
                  currentState = GameState.End;
                  gameClearText.gameObject.SetActive(true);
-                 gameClearText.transform.DOScale(1.5f, 1f).SetLoopType(LoopType.Yoyo).SetLoops(-1);
+                 gameClearText.transform.DOScale(1.5f, 1f).SetLoops(-1, LoopType.Yoyo);
                  await UniTask.Delay(5000);
                  break;
             }

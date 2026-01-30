@@ -3,3 +3,5 @@ UserSettings
 Temp
 ProjectSettings/ProjectVersion.txt
 Logs
+.vs
+obj
