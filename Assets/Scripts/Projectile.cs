@@ -24,12 +24,13 @@ public class Projectile : MonoBehaviour
         if (target != null)
         {
             initialDirection = (target.transform.position - transform.position).normalized;
-            initialDirection.y = 0;
         }
         else
         {
             initialDirection = transform.forward;
         }
+        
+        initialDirection.y = 0; // Ensure movement is on horizontal plane
 
         Destroy(gameObject, 3f);
         initialized = true;
