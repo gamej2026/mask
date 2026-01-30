@@ -7,10 +7,14 @@ public class GameManager : MonoBehaviour
     private Unit enemy;
     private Camera mainCam;
     private GameObject starReward;
+    private TextMesh gameClearText;
 
     // States
-    private enum GameState { Move, Battle, Reward }
+    private enum GameState { Move, Battle, Reward, End }
     private GameState currentState;
+
+    private int stageCount = 1;
+    private const int bossStage = 4;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void InitializeGame()
@@ -80,6 +84,17 @@ public class GameManager : MonoBehaviour
         starReward.name = "RewardStar";
         starReward.GetComponent<Renderer>().material.color = Color.yellow;
         starReward.SetActive(false);
+
+        // Create Game Clear Text
+        GameObject gcObj = new GameObject("GameClearText");
+        gcObj.transform.SetParent(mainCam.transform);
+        gcObj.transform.localPosition = new Vector3(0, 0, 10);
+        gameClearText = gcObj.AddComponent<TextMesh>();
+        gameClearText.text = "GAME CLEAR";
+        gameClearText.fontSize = 50;
+        gameClearText.anchor = TextAnchor.MiddleCenter;
+        gameClearText.color = Color.white;
+        gcObj.SetActive(false);
     }
 
     IEnumerator GameLoop()
@@ -87,8 +102,15 @@ public class GameManager : MonoBehaviour
         while (true)
         {
             yield return StartCoroutine(MovePhase());
-            yield return StartCoroutine(BattlePhase());
-            yield return StartCoroutine(RewardPhase());
+
+            bool isBoss = (stageCount == bossStage);
+            yield return StartCoroutine(BattlePhase(isBoss));
+
+            yield return StartCoroutine(RewardPhase(isBoss));
+
+            if (isBoss) break; // End Game
+
+            stageCount++;
         }
     }
 
@@ -125,10 +147,10 @@ public class GameManager : MonoBehaviour
         player.moveSpeed = originalSpeed; // Restore combat speed
     }
 
-    IEnumerator BattlePhase()
+    IEnumerator BattlePhase(bool isBoss)
     {
         currentState = GameState.Battle;
-        Debug.Log("Starting Battle Phase");
+        Debug.Log($"Starting Battle Phase (Stage {stageCount})");
 
         // Spawn Enemy
         // Enemy enters from right side of screen
@@ -140,18 +162,36 @@ public class GameManager : MonoBehaviour
         Vector3 spawnPos = new Vector3(camPos.x + screenWidth / 2f + 2f, 0, 0);
 
         GameObject eObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        eObj.name = "Monster";
+        eObj.name = isBoss ? "FinalBoss" : "Monster";
         eObj.transform.position = spawnPos;
         enemy = eObj.AddComponent<Unit>();
 
         // Enemy Stats
-        enemy.maxHealth = 50;
-        enemy.moveSpeed = 3f;
-        enemy.attackSpeed = 1.5f;
-        enemy.attackRange = 1.5f;
-        enemy.knockbackDist = 0.5f;
-        enemy.attackPower = 5f;
+        if (isBoss)
+        {
+            eObj.transform.localScale = Vector3.one * 2f;
+            enemy.maxHealth = 300; // Boss HP
+            enemy.moveSpeed = 2f; // Slower
+            enemy.attackSpeed = 2.0f; // Slower attack
+            enemy.attackRange = 3f; // Longer range
+            enemy.knockbackDist = 2f;
+            enemy.attackPower = 20f;
+            eObj.GetComponent<Renderer>().material.color = new Color(0.5f, 0, 0.5f); // Purple
+        }
+        else
+        {
+            enemy.maxHealth = 50;
+            enemy.moveSpeed = 3f;
+            enemy.attackSpeed = 1.5f;
+            enemy.attackRange = 1.5f;
+            enemy.knockbackDist = 0.5f;
+            enemy.attackPower = 5f;
+        }
+
         enemy.Initialize(Team.Enemy);
+
+        // Override visual for Boss if needed (Initialize resets color)
+        if(isBoss) eObj.GetComponent<Renderer>().material.color = new Color(0.5f, 0, 0.5f);
 
         // Assign Targets
         player.target = enemy;
@@ -187,17 +227,28 @@ public class GameManager : MonoBehaviour
         player.target = null;
     }
 
-    IEnumerator RewardPhase()
+    IEnumerator RewardPhase(bool isBoss)
     {
         currentState = GameState.Reward;
         Debug.Log("Starting Reward Phase");
 
-        // Show Star above player
-        starReward.transform.position = player.transform.position + Vector3.up * 2f;
-        starReward.SetActive(true);
+        if (isBoss)
+        {
+            // Game Clear
+            gameClearText.gameObject.SetActive(true);
+            currentState = GameState.End;
+            Debug.Log("GAME CLEAR");
+            yield return new WaitForSeconds(5f);
+        }
+        else
+        {
+            // Show Star above player
+            starReward.transform.position = player.transform.position + Vector3.up * 2f;
+            starReward.SetActive(true);
 
-        yield return new WaitForSeconds(2f); // Show for 2 seconds
+            yield return new WaitForSeconds(2f); // Show for 2 seconds
 
-        starReward.SetActive(false);
+            starReward.SetActive(false);
+        }
     }
 }
