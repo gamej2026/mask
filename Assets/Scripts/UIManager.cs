@@ -250,10 +250,9 @@ public class UIManager : MonoBehaviour
         icon.transform.SetParent(card.transform, false);
         Image iconImg = icon.AddComponent<Image>();
         iconImg.color = visualColor;
-        RectTransform iconRect = icon.AddComponent<RectTransform>();
-        iconRect.anchoredPosition = new Vector2(0, 80);
-        iconRect.sizeDelta = new Vector2(150, 150);
-    }
+        iconImg.rectTransform.anchoredPosition = new Vector2(0, 80);
+        iconImg.rectTransform.sizeDelta = new Vector2(150, 150);
+    } 
 
     // --- Replace Mask Panel ---
 
