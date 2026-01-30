@@ -50,7 +50,7 @@ public class UIManager : MonoBehaviour
 
         canvasObj.AddComponent<GraphicRaycaster>();
 
-        if (FindObjectOfType<UnityEngine.EventSystems.EventSystem>() == null)
+        if (FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
         {
             GameObject eventSystem = new GameObject("EventSystem");
             eventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();

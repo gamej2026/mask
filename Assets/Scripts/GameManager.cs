@@ -31,7 +31,7 @@ public class GameManager : MonoBehaviour
     {
         GameData.Initialize();
 
-        if (FindObjectOfType<GameManager>() == null)
+        if (FindFirstObjectByType<GameManager>() == null)
         {
             GameObject gmObj = new GameObject("GameManager");
             gmObj.AddComponent<GameManager>();
@@ -79,7 +79,7 @@ public class GameManager : MonoBehaviour
         mainCam.backgroundColor = new Color(0.53f, 0.8f, 0.92f);
 
         // Light
-        if (FindObjectOfType<Light>() == null)
+        if (FindFirstObjectByType<Light>() == null)
         {
             GameObject lightObj = new GameObject("Light");
             Light l = lightObj.AddComponent<Light>();

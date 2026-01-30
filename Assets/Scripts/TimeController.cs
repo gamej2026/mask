@@ -34,5 +34,5 @@ public class TimeController : MonoBehaviour
             else
                 Time.timeScale = 1;
         }
-    }
+    } 
 }
