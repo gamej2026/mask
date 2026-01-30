@@ -7,10 +7,7 @@ using System;
 public class BuildScript
 {
     public static void BuildWebGL()
-    {
-        // 빌드 시간을 BuildInfo.txt에 기록
-        UpdateBuildInfo();
-        
+    {   
         // 빌드 경로
         string buildPath = "build/webgl";
         
@@ -56,25 +53,5 @@ public class BuildScript
         }
 
         return scenePaths;
-    }
-
-    private static void UpdateBuildInfo()
-    {
-        string resourcesPath = "Assets/Resources";
-        string buildInfoPath = Path.Combine(resourcesPath, "BuildInfo.txt");
-        
-        // Resources 폴더가 없으면 생성
-        if (!Directory.Exists(resourcesPath))
-        {
-            Directory.CreateDirectory(resourcesPath);
-        }
-        
-        // 빌드 시간 기록
-        string buildTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-        string content = $"Build Time: {buildTime}";
-        
-        File.WriteAllText(buildInfoPath, content);
-        
-        UnityEngine.Debug.Log($"Build info updated: {content}");
     }
 }
