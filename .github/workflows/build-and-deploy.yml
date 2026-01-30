@@ -343,7 +343,7 @@ jobs:
           # Start-Process를 사용하여 프로세스를 실행하고 종료 코드를 캡처
           # 참고: -batchmode와 -nographics는 앞쪽에 배치하여 Unity가 올바르게 batch mode로 실행되도록 합니다
           $process = Start-Process -FilePath $unityPath `
-            -ArgumentList "-batchmode", "-nographics", "-quit", "-projectPath", $projectPath, "-buildTarget", "WebGL", "-executeMethod", "BuildScript.BuildWebGL", "-noUpm", "-logFile", $logFile `
+            -ArgumentList "-batchmode", "-nographics", "-quit", "-projectPath", $projectPath, "-buildTarget", "WebGL", "-executeMethod", "BuildScript.BuildWebGL", "-logFile", $logFile `
             -Wait -PassThru -NoNewWindow
           
           $exitCode = $process.ExitCode
@@ -411,7 +411,7 @@ jobs:
           LOG_FILE="$PROJECT_PATH/build.log"
           
           # Unity 빌드 명령 실행
-          "$UNITY_PATH" -batchmode -nographics -quit -projectPath "$PROJECT_PATH" -buildTarget WebGL -executeMethod BuildScript.BuildWebGL -noUpm -logFile "$LOG_FILE" || EXIT_CODE=$?
+          "$UNITY_PATH" -batchmode -nographics -quit -projectPath "$PROJECT_PATH" -buildTarget WebGL -executeMethod BuildScript.BuildWebGL -logFile "$LOG_FILE" || EXIT_CODE=$?
           EXIT_CODE=${EXIT_CODE:-0}
           
           # 로그 출력
