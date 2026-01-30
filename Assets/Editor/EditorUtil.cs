@@ -17,7 +17,7 @@ public class EditorUtil
         EditorApplication.isPlaying = true;
     }
 
-    [MenuItem("Util/Stop %W")]
+    [MenuItem("Util/Stop %Q")]
     private static void StopEditor()
     {
         EditorApplication.isPlaying = false;
