@@ -9,9 +9,6 @@ public enum UnitState { Idle, Move, Attack, Hit, Die }
 
 public class Unit : MonoBehaviour
 {
-    // Constants
-    private const float PROJECTILE_HEIGHT = 0.5f; // Height at which projectiles fly
-    
     // Base Stats
     public float baseMaxHealth = 100f;
     public float baseMoveSpeed = 5f;
@@ -106,40 +103,7 @@ public class Unit : MonoBehaviour
             originalColor = data.color;
             rend.material.color = originalColor;
         }
-        
-        // Adjust collider height to ensure projectiles can hit regardless of scale
-        // Projectiles fly at 0.5 units above ground, so collider must extend to that height
-        AdjustColliderForProjectileHit();
-        
         UpdateVisuals();
-    }
-    
-    void AdjustColliderForProjectileHit()
-    {
-        // Projectile flight height is defined by PROJECTILE_HEIGHT constant
-        BoxCollider boxCollider = GetComponent<BoxCollider>();
-        if (boxCollider != null)
-        {
-            // Calculate current collider height based on scale
-            float currentColliderHeight = boxCollider.size.y * transform.localScale.y;
-            
-            // Calculate minimum collider height needed (PROJECTILE_HEIGHT * 2 to cover from center)
-            float minColliderHeight = PROJECTILE_HEIGHT * 2f;
-            
-            // If current collider is shorter than needed, extend it
-            if (currentColliderHeight < minColliderHeight)
-            {
-                // Adjust collider size to reach projectile height
-                Vector3 newSize = boxCollider.size;
-                newSize.y = minColliderHeight / transform.localScale.y;
-                boxCollider.size = newSize;
-                
-                // Adjust collider center to keep bottom at ground level
-                Vector3 newCenter = boxCollider.center;
-                newCenter.y = PROJECTILE_HEIGHT / transform.localScale.y;
-                boxCollider.center = newCenter;
-            }
-        }
     }
 
     // Fallback/Legacy Initialize
@@ -335,7 +299,7 @@ public class Unit : MonoBehaviour
 
         GameObject projObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         projObj.name = "Projectile";
-        projObj.transform.position = transform.position + Vector3.up * PROJECTILE_HEIGHT;
+        projObj.transform.position = transform.position + Vector3.up * 0.5f; // Center
         projObj.transform.localScale = Vector3.one * 0.5f;
 
         // Physics Setup
