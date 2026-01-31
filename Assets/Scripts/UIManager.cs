@@ -30,6 +30,9 @@ public class UIManager : MonoBehaviour
     private TextMeshProUGUI detailName;
     private TextMeshProUGUI detailDesc;
 
+    // FPS Display - kept for potential future control (e.g., toggle on/off)
+    private FPSDisplay fpsDisplay;
+
     private int selectedRewardIndex = -1;
     private int selectedReplaceIndex = -1;
 
@@ -42,6 +45,7 @@ public class UIManager : MonoBehaviour
         SetupDetailPanel();
         SetupGameOverPanel();
         SetupGameClearPanel();
+        SetupFPSDisplay();
     }
 
     void SetupCanvas()
@@ -575,5 +579,14 @@ public class UIManager : MonoBehaviour
         txt.rectTransform.sizeDelta = new Vector2(200, 60);
 
         return btn;
+    }
+
+    // --- FPS Display ---
+
+    void SetupFPSDisplay()
+    {
+        GameObject fpsObj = new GameObject("FPSDisplay");
+        fpsObj.transform.SetParent(mainCanvas.transform, false);
+        fpsDisplay = fpsObj.AddComponent<FPSDisplay>();
     }
 }
