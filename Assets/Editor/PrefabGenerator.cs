@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 using System.IO;
 using UnityEngine.UI;
@@ -24,7 +24,6 @@ public class PrefabGenerator
         // 2. Environment
         CreatePrefab("Prefabs/Environment/MainCamera", CreateMainCamera);
         CreatePrefab("Prefabs/Environment/DirectionalLight", CreateDirectionalLight);
-        CreatePrefab("Prefabs/Environment/Ground", CreateGround);
         CreatePrefab("Prefabs/Environment/Tree", CreateTree);
 
         // 3. Units
@@ -130,16 +129,6 @@ public class PrefabGenerator
         Light l = go.AddComponent<Light>();
         l.type = LightType.Directional;
         go.transform.rotation = Quaternion.Euler(50, -30, 0);
-        return go;
-    }
-
-    static GameObject CreateGround()
-    {
-        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go.name = "Ground";
-        go.transform.position = new Vector3(0, -5.5f, 0);
-        go.transform.localScale = new Vector3(1000, 10, 10);
-        go.GetComponent<Renderer>().material = GetMaterial("GroundMat", new Color(0.2f, 0.6f, 0.2f));
         return go;
     }
 

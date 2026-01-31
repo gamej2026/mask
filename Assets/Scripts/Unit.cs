@@ -60,7 +60,7 @@ public class Unit : MonoBehaviour
     private Renderer rend;
     private Color originalColor;
     private GameObject currentMaskObject;
-    private Transform maskPosTransform;
+    public Transform maskPosTransform;
 
     // Active Mask
     public MaskData equippedMask;
@@ -150,13 +150,13 @@ public class Unit : MonoBehaviour
         // Find MaskPos if not already found
         if (maskPosTransform == null)
         {
-            maskPosTransform = transform.Find("MaskPos");
+            maskPosTransform = transform.Find("GameObject/MainCharacter/mixamorig:Hips/mixamorig:Spine/mixamorig:Spine1/mixamorig:Spine2/mixamorig:Neck/mixamorig:Head");
             if (maskPosTransform == null)
             {
                 // Recursive search
                 foreach (Transform t in GetComponentsInChildren<Transform>())
                 {
-                    if (t.name == "MaskPos")
+                    if (t.name.EndsWith("Head"))
                     {
                         maskPosTransform = t;
                         break;
