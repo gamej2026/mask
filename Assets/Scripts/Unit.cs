@@ -50,6 +50,7 @@ public class Unit : MonoBehaviour
     private TextMeshPro healthText;
     private Renderer rend;
     private Color originalColor;
+    private GameObject currentMaskObject;
 
     // Active Mask
     public MaskData equippedMask;
@@ -127,6 +128,8 @@ public class Unit : MonoBehaviour
             originalColor = data.color;
             rend.material.color = originalColor;
         }
+
+        UpdateMaskVisuals();
         UpdateVisuals();
     }
 
@@ -225,6 +228,27 @@ public class Unit : MonoBehaviour
         {
             originalColor = equippedMask.color;
             rend.material.color = originalColor;
+            UpdateMaskVisuals();
+        }
+    }
+
+    private void UpdateMaskVisuals()
+    {
+        if (currentMaskObject != null)
+        {
+            Destroy(currentMaskObject);
+            currentMaskObject = null;
+        }
+
+        if (equippedMask != null && !string.IsNullOrEmpty(equippedMask.prefabPath))
+        {
+            GameObject maskPrefab = Resources.Load<GameObject>(equippedMask.prefabPath);
+            if (maskPrefab != null)
+            {
+                currentMaskObject = Instantiate(maskPrefab, transform);
+                // Assume mask prefab is centered or properly offset.
+                currentMaskObject.transform.localPosition = Vector3.zero;
+            }
         }
     }
 
