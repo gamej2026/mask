@@ -494,20 +494,37 @@ public class GameManager : MonoBehaviour
         int emptySlots = maxInventorySize - inventory.Count;
         float baseNewMaskChance = (unownedMasks.Count > 0) ? (15f + (15f * emptySlots)) : 0f;
 
-        // Tracking masks picked in this reward phase to avoid duplicates among the 3 options
-        List<string> pickedInThisPhaseIds = new List<string>();
+        // Tracking picked items in this reward phase to avoid duplicates among the 3 options
+        List<string> pickedMaskIds = new List<string>();
+        List<string> pickedStatIds = new List<string>();
+        bool upgradeAlreadyPicked = false;
 
         for (int i = 0; i < 3; i++)
         {
-            float roll = Random.Range(0f, 100f);
             RewardOption opt = new RewardOption();
 
             // Filter out masks already picked for other slots in this phase
-            List<MaskData> availableMasks = unownedMasks.FindAll(m => !pickedInThisPhaseIds.Contains(m.id));
+            List<MaskData> availableMasks = unownedMasks.FindAll(m => !pickedMaskIds.Contains(m.id));
 
-            // If no more unique masks available, set chance to 0
+            // Calculate available reward types and their weights
             float currentNewMaskChance = (availableMasks.Count > 0) ? baseNewMaskChance : 0f;
-            float currentUpgradeChance = (100f - currentNewMaskChance) * 0.7f;
+            float currentUpgradeChance = upgradeAlreadyPicked ? 0f : (100f - currentNewMaskChance) * 0.7f;
+            float currentStatBoostChance = 100f - currentNewMaskChance - currentUpgradeChance;
+
+            // Normalize chances (in case some options are exhausted)
+            float totalChance = currentNewMaskChance + currentUpgradeChance + currentStatBoostChance;
+            if (totalChance <= 0f)
+            {
+                // Fallback: give a random stat boost
+                opt.type = RewardType.StatBoost;
+                opt.statData = GameData.GetRandomStatReward(pickedStatIds);
+                opt.description = opt.statData != null ? opt.statData.name : "Stat Boost";
+                if (opt.statData != null) pickedStatIds.Add(opt.statData.id);
+                options.Add(opt);
+                continue;
+            }
+
+            float roll = Random.Range(0f, totalChance);
 
             if (roll < currentNewMaskChance)
             {
@@ -515,18 +532,20 @@ public class GameManager : MonoBehaviour
                 MaskData picked = availableMasks[Random.Range(0, availableMasks.Count)];
                 opt.maskData = picked.Copy();
                 opt.description = "New Mask";
-                pickedInThisPhaseIds.Add(picked.id);
+                pickedMaskIds.Add(picked.id);
             }
             else if (roll < currentNewMaskChance + currentUpgradeChance)
             {
                 opt.type = RewardType.UpgradeMask;
                 opt.description = "Upgrade Equipped Mask";
+                upgradeAlreadyPicked = true;
             }
             else
             {
                 opt.type = RewardType.StatBoost;
-                opt.statData = GameData.GetRandomStatReward();
-                opt.description = opt.statData.name;
+                opt.statData = GameData.GetRandomStatReward(pickedStatIds);
+                opt.description = opt.statData != null ? opt.statData.name : "Stat Boost";
+                if (opt.statData != null) pickedStatIds.Add(opt.statData.id);
             }
             options.Add(opt);
         }
