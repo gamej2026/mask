@@ -467,8 +467,51 @@ public class GameManager : MonoBehaviour
             player.target = enemy;
             enemy.target = player;
 
-            // Wait for death
-            await UniTask.WaitUntil(() => player.currentHealth <= 0 || enemy.currentHealth <= 0);
+            // 전투 타이머 시작
+            float battleStartTime = Time.time;
+            const float battleTimeLimit = 50f;
+            float lastBuffTime = 0f;
+            
+            // 복리 계산을 위한 초기값 저장
+            float initialAtkEff = enemy.baseAtkEff;
+            float initialMoveSpeed = enemy.baseMoveSpeed;
+
+            // 타이머 UI 표시
+            if (uiManager != null) uiManager.ShowBattleTimer(true);
+
+            // Wait for death with overtime buff logic
+            while (player.currentHealth > 0 && enemy.currentHealth > 0)
+            {
+                float elapsed = Time.time - battleStartTime;
+
+                // 타이머 UI 업데이트
+                if (uiManager != null) uiManager.UpdateBattleTimer(elapsed, battleTimeLimit);
+
+                // 50초 초과 시 매 초마다 적 버프 (복리)
+                if (elapsed > battleTimeLimit)
+                {
+                    float timeSinceLimit = elapsed - battleTimeLimit;
+                    int currentBuffCount = Mathf.FloorToInt(timeSinceLimit);
+                    
+                    if (currentBuffCount > lastBuffTime)
+                    {
+                        lastBuffTime = currentBuffCount;
+                        
+                        // 복리 계산: 초기값 * (1.01^n) - 초기값 = 보너스
+                        float compoundMultiplier = Mathf.Pow(1.01f, currentBuffCount);
+                        enemy.permAtkEffBonus = initialAtkEff * (compoundMultiplier - 1f);
+                        enemy.permMoveSpeedBonus = initialMoveSpeed * (compoundMultiplier - 1f);
+                        enemy.RecalculateStats();
+                        enemy.ShowText("Power Up!", Color.red);
+                        Debug.Log($"Overtime! ({currentBuffCount}s) Enemy buffed - Multiplier: x{compoundMultiplier:F3}");
+                    }
+                }
+
+                await UniTask.Yield();
+            }
+
+            // 타이머 UI 숨김
+            if (uiManager != null) uiManager.ShowBattleTimer(false);
 
             if (player.currentHealth <= 0) return; // Lose
 

@@ -256,6 +256,22 @@ public class UIManager : MonoBehaviour
         );
     }
 
+    public void ShowBattleTimer(bool show)
+    {
+        if (combatUI != null)
+        {
+            combatUI.ShowBattleTimer(show);
+        }
+    }
+
+    public void UpdateBattleTimer(float elapsedTime, float timeLimit)
+    {
+        if (combatUI != null)
+        {
+            combatUI.UpdateBattleTimer(elapsedTime, timeLimit);
+        }
+    }
+
     // --- Detail Panel ---
 
     void SetupDetailPanel()

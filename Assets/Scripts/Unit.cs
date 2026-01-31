@@ -536,7 +536,7 @@ public class Unit : MonoBehaviour
         else gameObject.SetActive(false);
     }
 
-    void ShowText(string msg, Color col)
+    public void ShowText(string msg, Color col)
     {
         GameObject prefab = Resources.Load<GameObject>("Prefabs/UI/PopupText");
         GameObject txtObj;
