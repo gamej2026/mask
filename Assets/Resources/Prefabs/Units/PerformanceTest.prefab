@@ -256,6 +256,7 @@ MonoBehaviour:
     staminaCost: 0
     color: {r: 0, g: 0, b: 0, a: 0}
     prefabPath: 
+    iconName: 
 --- !u!1001 &2885665552212740040
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -308,6 +309,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: MainCharacter_Fast Run
       objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 3a40ca858ab38f846aaf79b1c3cada66, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 31582836033d7a240b78c6d59c73ef66, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
