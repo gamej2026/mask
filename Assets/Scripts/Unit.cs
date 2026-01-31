@@ -63,20 +63,32 @@ public class Unit : MonoBehaviour
     // Active Mask
     public MaskData equippedMask;
 
+    private Animator anim;
+
     void Awake()
     {
         rend = GetComponent<Renderer>();
         CreateUnitHUD();
     }
-
+    GameObject hudObj;
     void CreateUnitHUD()
     {
         GameObject prefab = Resources.Load<GameObject>("Prefabs/UI/UnitHUD");
         if (prefab != null)
         {
-            GameObject hudObj = Instantiate(prefab, transform);
+            hudObj = Instantiate(prefab, transform);
             hudObj.name = "UnitHUD";
-            hudObj.transform.localPosition = Vector3.up * 2f; // Position above unit
+            var hudPosTr = transform.Find("HUDPos");
+            if(hudPosTr)
+            {
+                hudObj.transform.SetParent(hudPosTr);
+                hudObj.transform.localPosition = Vector3.zero;
+            }
+            else
+            {
+                hudObj.transform.localPosition = Vector3.up * 1.3f; // Position above unit
+            }
+
             unitHUD = hudObj.GetComponent<UnitHUD>();
         }
     }
@@ -84,6 +96,9 @@ public class Unit : MonoBehaviour
     public void InitializePlayer(UnitData data, List<MaskData> inventory, int equippedIndex)
     {
         team = Team.Player;
+        anim = GetComponentInChildren<Animator>();
+        state = UnitState.Move;
+        if (anim != null) anim.Play("Move", 0, 0f);
         if (data == null)
         {
             // Fallback
@@ -150,7 +165,9 @@ public class Unit : MonoBehaviour
 
     public void InitializeMonster(UnitData data)
     {
+        anim = GetComponentInChildren<Animator>();
         team = Team.Enemy;
+        transform.rotation = Quaternion.Euler(0, 180, 0);
         baseMaxHealth = data.hp;
         baseAtkEff = data.atkEff;
         baseAtkSpeedAccel = data.atkSpeedAccel;
@@ -161,6 +178,9 @@ public class Unit : MonoBehaviour
         baseKnockback = data.knockback;
         baseMaxStamina = data.maxStamina;
         transform.localScale = Vector3.one * data.scale;
+
+        Vector3 parentScale = hudObj.transform.parent.lossyScale;
+        hudObj.transform.localScale = new Vector3(1f / parentScale.x, 1f / parentScale.y, 1f / parentScale.z);
 
         equippedMask = null;
         RecalculateStats();
@@ -303,6 +323,11 @@ public class Unit : MonoBehaviour
 
     void Update()
     {
+        if (anim != null)
+        {
+            anim.SetBool("IsMove", state == UnitState.Move);
+        }
+
         if (state == UnitState.Die) return;
 
         // Update HUD
@@ -375,6 +400,8 @@ public class Unit : MonoBehaviour
 
     async UniTaskVoid AttackRoutine()
     {
+        if (anim != null) anim.SetTrigger("Attack");
+
         lastAttackTime = Time.time;
 
         if (team == Team.Player)
@@ -455,6 +482,16 @@ public class Unit : MonoBehaviour
     {
         if (state == UnitState.Die) return;
 
+#if UNITY_EDITOR
+        if (team == Team.Enemy && (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)))
+        {
+            currentHealth = 0;
+            ShowText("INSTANT KILL!", Color.red);
+            Die();
+            return;
+        }
+#endif
+
         float reducedDamage = damage * (1f - finalDef);
         currentHealth -= reducedDamage;
         UpdateVisuals();
@@ -474,6 +511,7 @@ public class Unit : MonoBehaviour
     async UniTaskVoid HitRoutine(float distance)
     {
         state = UnitState.Hit;
+        if (anim != null) anim.SetTrigger("Damaged");
 
         Vector3 knockDir = (team == Team.Player) ? Vector3.left : Vector3.right;
         transform.DOMove(transform.position + knockDir * distance, hitDuration).SetEase(Ease.OutQuad);
@@ -492,6 +530,8 @@ public class Unit : MonoBehaviour
     void Die()
     {
         state = UnitState.Die;
+        if (anim != null) anim.SetBool("isDead", true);
+
         if (rend) rend.material.DOFade(0, 0.5f).OnComplete(() => gameObject.SetActive(false));
         else gameObject.SetActive(false);
     }

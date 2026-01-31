@@ -36,9 +36,6 @@ public class UIManager : MonoBehaviour
     private TextMeshProUGUI detailName;
     private TextMeshProUGUI detailDesc;
 
-    // FPS Display
-    private FPSDisplay fpsDisplay;
-
     private int selectedRewardIndex = -1;
     private int selectedReplaceIndex = -1;
 
@@ -52,7 +49,6 @@ public class UIManager : MonoBehaviour
         SetupDetailPanel();
         SetupGameOverPanel();
         SetupGameClearPanel();
-        SetupFPSDisplay();
     }
 
     void SetupCanvas()
@@ -581,13 +577,5 @@ public class UIManager : MonoBehaviour
             gameClearPanel.SetActive(true);
             gameClearPanel.transform.SetAsLastSibling();
         }
-    }
-
-    void SetupFPSDisplay()
-    {
-        GameObject fpsObj = new GameObject("FPSDisplay");
-        fpsObj.transform.SetParent(mainCanvas.transform, false);
-        fpsObj.transform.localPosition = new Vector3(-300, 100, 0);
-        fpsDisplay = fpsObj.AddComponent<FPSDisplay>();
     }
 }

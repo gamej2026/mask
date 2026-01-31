@@ -1,6 +1,6 @@
 ID,Name,Desc,ActionType,PassiveHP,PassiveStamina,PassiveDef,PassiveMoveSpeed,PassiveAtkEff,PassiveAtkSpeedAccel,PassiveRange,EquipAtk,EquipAtkInterval,EquipDef,EquipRange,EquipKnockback,StaminaCost,ColorHex,PrefabPath,IconName
-mask_default,Iron Mask,Standard issue mask.,Attack,0,0,0,0,2,2,0,10,1,0,1.5,1,2,AAAAAA,Prefabs/Masks/IronMask,Image/icon_default
-mask_cat,Cat Mask,Agile and fast.,Attack,0,0,0,0.5,0,20,0,5,0.5,0,2,0.5,3,0,Prefabs/Masks/CatMask,Image/icon_cat
-mask_half,Half Mask,Powerful but heavy.,Attack,0,0,10,-0.2,20,0,0,20,1.5,10,1.5,2,4,DAA520,Prefabs/Masks/HalfMask,Image/icon_half
-mask_healer,Saint Mask,Heals while attacking.,Heal,10,0,0,0,0,0,0,5,1,5,1.5,1,3,FFFFFF,Prefabs/Masks/SaintMask,Image/icon_healer
-mask_buffer,Warlord Mask,Growth focus.,AtkBuff,0,0,5,0,10,0,0,8,1.2,5,1.5,1,3,FF0000,Prefabs/Masks/WarlordMask,Image/icon_buffer
+mask_default,Iron Mask,Standard issue mask.,Attack,0,0,0,0,0,0,0,10,1,0,1.5,1,2,AAAAAA,Prefabs/Masks/IronMask,icons/icon_default
+mask_cat,Cat Mask,Agile and fast.,Attack,0,0,0,0.5,0,20,0,5,0.5,0,2,0.5,3,0,Prefabs/Masks/CatMask,icons/icon_cat
+mask_half,Half Mask,Powerful but heavy.,Attack,0,0,10,-0.2,20,0,0,20,1.5,10,1.5,2,4,DAA520,Prefabs/Masks/HalfMask,icons/icon_half
+mask_healer,Saint Mask,Heals while attacking.,Heal,10,0,0,0,0,0,0,5,1,5,1.5,1,3,FFFFFF,Prefabs/Masks/SaintMask,icons/icon_healer
+mask_buffer,Warlord Mask,Growth focus.,AtkBuff,0,0,5,0,10,0,0,8,1.2,5,1.5,1,3,FF0000,Prefabs/Masks/WarlordMask,icons/icon_buffer
