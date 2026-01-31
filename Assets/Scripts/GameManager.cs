@@ -424,8 +424,11 @@ public class GameManager : MonoBehaviour
         foreach (string monId in stageData.monsterIds)
         {
             UnitData uData = GameData.GetUnit(monId);
-            if (uData == null) continue;
-
+            if (uData == null)
+            {
+                Debug.LogError($"Monster ID {monId} not found in GameData.");
+                continue;
+            }
             // Spawn
             float screenHeight = mainCam.orthographicSize * 2f;
             float screenWidth = screenHeight * mainCam.aspect;
@@ -438,7 +441,8 @@ public class GameManager : MonoBehaviour
             if (!string.IsNullOrEmpty(uData.prefabPath))
             {
                 monPrefab = Resources.Load<GameObject>(uData.prefabPath);
-            }
+            } 
+            Debug.LogWarning($"Spawning Monster: {monId} at {monPrefab}");
 
             if (monPrefab == null) monPrefab = Resources.Load<GameObject>($"Prefabs/Units/{monId}");
             if (monPrefab == null) monPrefab = Resources.Load<GameObject>("Prefabs/Units/Monster");
