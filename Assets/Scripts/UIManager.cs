@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Cysharp.Threading.Tasks;
@@ -230,7 +230,7 @@ public class UIManager : MonoBehaviour
                 rect.sizeDelta = new Vector2(0, 300); // Fixed height of 300 pixels
             }
         }
-        
+
         detailPanel.SetActive(false);
         detailPanel.transform.SetAsLastSibling();
 
@@ -455,7 +455,7 @@ public class UIManager : MonoBehaviour
         replacePanel.SetActive(true);
         replacePanel.transform.SetAsLastSibling();
 
-        foreach(Transform t in replaceContainer) Destroy(t.gameObject);
+        foreach (Transform t in replaceContainer) Destroy(t.gameObject);
 
         var inv = GameManager.Instance.inventory;
         for (int i = 0; i < inv.Count; i++)
