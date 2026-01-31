@@ -588,10 +588,20 @@ public class GameManager : MonoBehaviour
                 // Upgrade currently equipped mask
                 MaskData m = inventory[equippedMaskIndex];
                 m.level++;
-                // Increase some stats
-                m.equipAtk += 5f;
-                m.passiveHP += 10f;
-                m.passiveAtkEff += 2f;
+
+                // Passive stats formula: InitialStat * (1 + (Level - 1) * 0.5)
+                MaskData initial = GameData.GetMask(m.id);
+                if (initial != null)
+                {
+                    float multiplier = 1f + (m.level - 1) * 0.5f;
+                    m.passiveHP = initial.passiveHP * multiplier;
+                    m.passiveDef = initial.passiveDef * multiplier;
+                    m.passiveSpeed = initial.passiveSpeed * multiplier;
+                    m.passiveAtkEff = initial.passiveAtkEff * multiplier;
+                    m.passiveAtkSpeedAccel = initial.passiveAtkSpeedAccel * multiplier;
+                    m.passiveRange = initial.passiveRange * multiplier;
+                    m.passiveStamina = initial.passiveStamina * multiplier;
+                }
 
                 player.InitializePlayer(playerBaseData, inventory, equippedMaskIndex);
                 Debug.Log($"Upgraded Equipped Mask to Lv.{m.level}");

@@ -1,7 +1,9 @@
 ID,Name,Effects
-reward_atk,ATK UP,Atk:20
-reward_speed,SPEED UP,Speed:20
-reward_hp,HP UP,Hp:50
-reward_stamina,STAMINA UP,Stamina:2
-reward_mixed,WELL BALANCED,Atk:10;Hp:20;Speed:10
-reward_glass,GLASS CANNON,Atk:50;Hp:-30
+reward_atk_hp,Power & Health,Atk:20;Hp:-10
+reward_hp_atk,Health & Power,Hp:20;Atk:-10
+reward_speed_atk,Speed & Power,Speed:20;Atk:-10
+reward_atk_speed,Power & Speed,Atk:20;Speed:-10
+reward_triple_balanced,Triple Balanced,Atk:10;Speed:10;Hp:-10
+reward_range_kb,Sniper,Range:1.0;KB:0.5;Move:-0.5
+reward_speed_runner,Swift Runner,Move:1.0;Atk:10;Hp:-10
+reward_heavy_tank,Heavy Tank,Hp:30;KB:1.0;Speed:-10

@@ -363,35 +363,57 @@ public class UIManager : MonoBehaviour
         btn.onClick.AddListener(() => selectedRewardIndex = index);
 
         string titleText = "";
-        string descText = opt.description;
+        string descText = "";
+        Sprite mainIcon = null;
         Color visualColor = Color.white;
 
         if (opt.type == RewardType.NewMask)
         {
-            titleText = opt.maskData.name;
-            descText = $"{opt.maskData.description}\n\n" +
-                       $"Equip Atk: {opt.maskData.equipAtk}\n" +
-                       $"Passive HP: {opt.maskData.passiveHP}";
-            visualColor = opt.maskData.color;
+            var m = opt.maskData;
+            titleText = $"{m.name} (New!)";
+            visualColor = m.color;
+            mainIcon = Resources.Load<Sprite>($"Icons/{m.iconName}");
+
+            descText = $"<color=#FFFF00>[Equip]</color> {m.actionType}\n";
+            descText += GetStatLine("baseatk", m.equipAtk, "", false);
+            descText += GetStatLine("cooldown", m.equipInterval, "s", false);
+            descText += GetStatLine("def", m.equipDef, "%", false);
+            descText += GetStatLine("range", m.equipRange, "", false);
+            descText += GetStatLine("kb", m.equipKnockback, "", false);
+
+            descText += "\n<color=#00FFFF>[Passive]</color>\n";
+            descText += GetStatListForMask(m);
         }
         else if (opt.type == RewardType.UpgradeMask)
         {
-            titleText = "UPGRADE MASK";
-            visualColor = Color.cyan;
             if (GameManager.Instance.equippedMaskIndex >= 0)
             {
                 var m = GameManager.Instance.inventory[GameManager.Instance.equippedMaskIndex];
-                descText = $"{m.name}\nLv. {m.level} -> Lv. {m.level + 1}";
+                var initial = GameData.GetMask(m.id);
+                titleText = m.name;
+                visualColor = m.color;
+                mainIcon = Resources.Load<Sprite>($"Icons/{m.iconName}");
+
+                descText = $"Lv. {m.level} -> <color=#00FF00>Lv. {m.level + 1}</color>\n";
+                descText += $"\n<color=#FFFF00>[Equip]</color> {m.actionType}\n";
+                descText += GetStatLine("baseatk", m.equipAtk, "", false);
+                descText += GetStatLine("cooldown", m.equipInterval, "s", false);
+
+                descText += "\n<color=#00FFFF>[Passive Upgrade]</color>\n";
+                if (initial != null)
+                {
+                    descText += GetStatUpgradeList(initial, m.level, m.level + 1);
+                }
             }
         }
         else if (opt.type == RewardType.StatBoost)
         {
-            titleText = "STAT BOOST";
+            titleText = opt.statData.name;
             visualColor = Color.green;
-            descText = "Permanent Stats:\n";
+            descText = "<color=#00FF00>[Stat Boost]</color>\n";
             foreach (var kv in opt.statData.effects)
             {
-                descText += $"{kv.Key}: {kv.Value}%\n";
+                descText += GetStatLine(kv.Key, kv.Value, "", true);
             }
         }
 
@@ -405,8 +427,95 @@ public class UIManager : MonoBehaviour
         if (iconTr)
         {
             var img = iconTr.GetComponent<Image>();
-            if (img) img.color = visualColor;
+            if (img)
+            {
+                if (mainIcon != null)
+                {
+                    img.sprite = mainIcon;
+                    img.color = Color.white;
+                }
+                else
+                {
+                    img.color = visualColor;
+                }
+            }
         }
+    }
+
+    private string GetStatLine(string key, float val, string unit, bool showPlus)
+    {
+        string iconTag = GetStatIconTag(key);
+        string sign = (showPlus && val > 0) ? "+" : "";
+        string formattedVal = "";
+
+        if (key.ToLower() == "cooldown") formattedVal = val.ToString("F2");
+        else if (key.ToLower() == "range" || key.ToLower() == "kb" || key.ToLower() == "move") formattedVal = val.ToString("F1");
+        else formattedVal = val.ToString("F0");
+
+        // Apply % unit for efficiency/accel if not provided
+        if (string.IsNullOrEmpty(unit))
+        {
+            if (key.ToLower() == "atk" || key.ToLower() == "speed" || key.ToLower() == "def") unit = "%";
+        }
+
+        return $"{iconTag} {sign}{formattedVal}{unit}\n";
+    }
+
+    private string GetStatListForMask(MaskData m)
+    {
+        string s = "";
+        s += GetStatLine("hp", m.passiveHP, "", false);
+        s += GetStatLine("atk", m.passiveAtkEff, "%", false);
+        s += GetStatLine("speed", m.passiveAtkSpeedAccel, "%", false);
+        s += GetStatLine("def", m.passiveDef, "%", false);
+        s += GetStatLine("range", m.passiveRange, "", false);
+        s += GetStatLine("move", m.passiveSpeed, "", false);
+        return s;
+    }
+
+    private string GetStatUpgradeList(MaskData initial, int currLvl, int nextLvl)
+    {
+        string s = "";
+        float currMult = 1f + (currLvl - 1) * 0.5f;
+        float nextMult = 1f + (nextLvl - 1) * 0.5f;
+
+        s += GetStatUpgradeLine("hp", initial.passiveHP, currMult, nextMult, "");
+        s += GetStatUpgradeLine("atk", initial.passiveAtkEff, currMult, nextMult, "%");
+        s += GetStatUpgradeLine("speed", initial.passiveAtkSpeedAccel, currMult, nextMult, "%");
+        s += GetStatUpgradeLine("def", initial.passiveDef, currMult, nextMult, "%");
+        s += GetStatUpgradeLine("range", initial.passiveRange, currMult, nextMult, "");
+        s += GetStatUpgradeLine("move", initial.passiveSpeed, currMult, nextMult, "");
+
+        return s;
+    }
+
+    private string GetStatUpgradeLine(string key, float baseVal, float cMult, float nMult, string unit)
+    {
+        string iconTag = GetStatIconTag(key);
+        float curr = baseVal * cMult;
+        float next = baseVal * nMult;
+
+        string fmt = (key.ToLower() == "range" || key.ToLower() == "move") ? "F1" : "F0";
+        return $"{iconTag} {curr.ToString(fmt)}{unit} -> <color=#00FF00>{next.ToString(fmt)}{unit}</color>\n";
+    }
+
+    private string GetStatIconTag(string key)
+    {
+        string spriteName = "";
+        switch (key.ToLower())
+        {
+            case "hp": spriteName = "health icon"; break;
+            case "atk": spriteName = "attack icon"; break;
+            case "baseatk": spriteName = "attack icon"; break;
+            case "speed": spriteName = "attack cooltime icon"; break;
+            case "cooldown": spriteName = "attack cooltime icon"; break;
+            case "def": spriteName = "defense icon"; break;
+            case "range": spriteName = "attack range icon"; break;
+            case "kb": spriteName = "knockback icon"; break;
+            case "move": spriteName = "movement speed icon"; break;
+            default: spriteName = "IconName"; break;
+        }
+        return $"<sprite name=\"{spriteName}\">";
     }
 
     // --- Replace Mask Panel ---

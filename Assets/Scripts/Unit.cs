@@ -28,6 +28,9 @@ public class Unit : MonoBehaviour
     public float permAtkSpeedAccelBonus = 0;
     public float permHPBonus = 0;
     public float permStaminaBonus = 0;
+    public float permRangeBonus = 0;
+    public float permMoveSpeedBonus = 0;
+    public float permKnockbackBonus = 0;
 
     // Current Effective Stats (Calculated)
     [Header("Effective Stats")]
@@ -223,16 +226,16 @@ public class Unit : MonoBehaviour
         // Final Calculations based on formulas
         maxHealth = (baseMaxHealth + passiveHP + permHPBonus);
         maxStamina = (baseMaxStamina + passiveStamina + permStaminaBonus);
-        moveSpeed = (baseMoveSpeed + passiveMoveSpeed);
+        moveSpeed = (baseMoveSpeed + passiveMoveSpeed + permMoveSpeedBonus);
 
         finalAtkPower = equipAtk * (baseAtkEff + passiveAtkEff + permAtkEffBonus) / 100f;
 
         float totalAccel = (baseAtkSpeedAccel + passiveAtkSpeedAccel + permAtkSpeedAccelBonus) / 100f;
         finalAtkInterval = equipInterval / Mathf.Max(0.1f, totalAccel);
 
-        finalRange = equipRange + passiveRange;
+        finalRange = equipRange + passiveRange + permRangeBonus;
         finalDef = (baseDef + passiveDef + equipDefAdd) / 100f; // As % reduction
-        finalKnockback = equipKnockback;
+        finalKnockback = equipKnockback + permKnockbackBonus;
 
         if (currentHealth > maxHealth) currentHealth = maxHealth;
         if (currentStamina > maxStamina) currentStamina = maxStamina;
@@ -289,6 +292,9 @@ public class Unit : MonoBehaviour
                 case "Speed": permAtkSpeedAccelBonus += effect.Value; break;
                 case "Hp": permHPBonus += effect.Value; break;
                 case "Stamina": permStaminaBonus += effect.Value; break;
+                case "Range": permRangeBonus += effect.Value; break;
+                case "Move": permMoveSpeedBonus += effect.Value; break;
+                case "KB": permKnockbackBonus += effect.Value; break;
             }
         }
         RecalculateStats();
