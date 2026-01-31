@@ -134,10 +134,6 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Environment
-
-        CreateBackgroundProps();
-
         // UIManager
         if (uiManager == null) // Check if assigned via Inspector (if GameManager was prefab)
         {
@@ -177,39 +173,6 @@ public class GameManager : MonoBehaviour
 
             // Initialize will be called after equipping mask
             player.transform.position = Vector3.zero;
-        }
-    }
-
-    void CreateBackgroundProps()
-    {
-        GameObject treePrefab = Resources.Load<GameObject>("Prefabs/Environment/Tree");
-
-        for (int i = 0; i < 20; i++)
-        {
-            float xPos = Random.Range(-10f, 100f);
-            float zPos = Random.Range(5f, 15f);
-
-            if (treePrefab != null)
-            {
-                Instantiate(treePrefab, new Vector3(xPos, 0, zPos), Quaternion.identity);
-            }
-            else
-            {
-                GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                trunk.name = "TreeTrunk";
-                trunk.transform.position = new Vector3(xPos, 0, zPos);
-                trunk.transform.localScale = new Vector3(0.5f, 2f, 0.5f);
-                trunk.GetComponent<Renderer>().material.color = new Color(0.4f, 0.2f, 0.1f);
-
-                GameObject leaves = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                leaves.name = "TreeLeaves";
-                leaves.transform.position = new Vector3(xPos, 2.5f, zPos);
-                leaves.transform.localScale = Vector3.one * 2.5f;
-                leaves.GetComponent<Renderer>().material.color = new Color(0.1f, 0.5f, 0.1f);
-
-                // Parent leaves to trunk for cleaner hierarchy if programmatic
-                leaves.transform.SetParent(trunk.transform, true);
-            }
         }
     }
 

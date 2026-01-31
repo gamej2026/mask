@@ -24,7 +24,6 @@ public class PrefabGenerator
         // 2. Environment
         CreatePrefab("Prefabs/Environment/MainCamera", CreateMainCamera);
         CreatePrefab("Prefabs/Environment/DirectionalLight", CreateDirectionalLight);
-        CreatePrefab("Prefabs/Environment/Tree", CreateTree);
 
         // 3. Units
         CreatePrefab("Prefabs/Units/Player", CreatePlayer);
@@ -130,23 +129,6 @@ public class PrefabGenerator
         l.type = LightType.Directional;
         go.transform.rotation = Quaternion.Euler(50, -30, 0);
         return go;
-    }
-
-    static GameObject CreateTree()
-    {
-        GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        trunk.name = "Tree";
-        trunk.transform.localScale = new Vector3(0.5f, 2f, 0.5f);
-        trunk.GetComponent<Renderer>().material = GetMaterial("TrunkMat", new Color(0.4f, 0.2f, 0.1f));
-
-        GameObject leaves = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        leaves.name = "Leaves";
-        leaves.transform.SetParent(trunk.transform);
-        leaves.transform.localPosition = new Vector3(0, 1.25f, 0);
-        leaves.transform.localScale = new Vector3(5f, 1.25f, 5f);
-        leaves.GetComponent<Renderer>().material = GetMaterial("LeavesMat", new Color(0.1f, 0.5f, 0.1f));
-
-        return trunk;
     }
 
     static GameObject CreatePlayer()
