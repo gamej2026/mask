@@ -1,11 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using TMPro;
 
 public class InventorySlotHandler : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
     public int slotIndex;
     public Image iconImage;
+    public TextMeshProUGUI levelText;
 
     private bool isPressed = false;
     private float pressTime;
@@ -19,6 +21,33 @@ public class InventorySlotHandler : MonoBehaviour, IPointerDownHandler, IPointer
             Transform t = transform.Find("Icon");
             if (t != null) iconImage = t.GetComponent<Image>();
         }
+
+        if (levelText == null)
+        {
+            Transform t = transform.Find("LevelText");
+            if (t != null) levelText = t.GetComponent<TextMeshProUGUI>();
+            else
+            {
+                // Create level text if missing
+                GameObject go = new GameObject("LevelText");
+                go.transform.SetParent(transform, false);
+                levelText = go.AddComponent<TextMeshProUGUI>();
+
+                RectTransform rt = go.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0, 1);
+                rt.anchorMax = new Vector2(0, 1);
+                rt.pivot = new Vector2(0, 1);
+                rt.anchoredPosition = new Vector2(5, -5);
+                rt.sizeDelta = new Vector2(100, 30);
+
+                levelText.fontSize = 18;
+                levelText.alignment = TextAlignmentOptions.TopLeft;
+                levelText.color = Color.white;
+                // Add outline for better visibility
+                levelText.outlineColor = Color.black;
+                levelText.outlineWidth = 0.2f;
+            }
+        }
     }
 
     public void SetMask(MaskData mask)
@@ -30,7 +59,14 @@ public class InventorySlotHandler : MonoBehaviour, IPointerDownHandler, IPointer
                 iconImage.color = Color.clear;
                 iconImage.sprite = null;
             }
+            if (levelText != null) levelText.gameObject.SetActive(false);
             return;
+        }
+
+        if (levelText != null)
+        {
+            levelText.text = $"Lv. {mask.level}";
+            levelText.gameObject.SetActive(true);
         }
 
         if (iconImage != null)

@@ -202,6 +202,24 @@ public class GameManager : MonoBehaviour
 
     public bool AddMaskToInventory(MaskData mask)
     {
+        // Check for duplicate
+        MaskData existing = inventory.Find(m => m.id == mask.id);
+        if (existing != null)
+        {
+            UpgradeMask(existing);
+
+            // If this is the equipped mask, update player stats
+            int index = inventory.IndexOf(existing);
+            if (index == equippedMaskIndex)
+            {
+                 player.InitializePlayer(playerBaseData, inventory, equippedMaskIndex);
+            }
+
+            if (uiManager != null) uiManager.UpdateInventoryUI();
+            Debug.Log($"Duplicate mask {mask.name} found. Upgraded to Lv.{existing.level}");
+            return true;
+        }
+
         if (inventory.Count < maxInventorySize)
         {
             inventory.Add(mask);
@@ -209,6 +227,25 @@ public class GameManager : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    public void UpgradeMask(MaskData m)
+    {
+        m.level++;
+
+        // Passive stats formula: InitialStat * (1 + (Level - 1) * 0.5)
+        MaskData initial = GameData.GetMask(m.id);
+        if (initial != null)
+        {
+            float multiplier = 1f + (m.level - 1) * 0.5f;
+            m.passiveHP = initial.passiveHP * multiplier;
+            m.passiveDef = initial.passiveDef * multiplier;
+            m.passiveSpeed = initial.passiveSpeed * multiplier;
+            m.passiveAtkEff = initial.passiveAtkEff * multiplier;
+            m.passiveAtkSpeedAccel = initial.passiveAtkSpeedAccel * multiplier;
+            m.passiveRange = initial.passiveRange * multiplier;
+            m.passiveStamina = initial.passiveStamina * multiplier;
+        }
     }
 
     public void ReplaceMaskInInventory(int index, MaskData newMask)
@@ -485,12 +522,12 @@ public class GameManager : MonoBehaviour
     {
         List<RewardOption> options = new List<RewardOption>();
 
-        // Pre-check for unowned masks to prevent duplicates and handle empty pool
-        List<string> ownedMaskIds = inventory.ConvertAll(m => m.id);
-        List<MaskData> unownedMasks = GameData.allMasks.FindAll(m => !ownedMaskIds.Contains(m.id));
+        // We now allow owned masks to be candidates (for leveling up)
+        List<MaskData> candidateMasks = GameData.allMasks;
 
         int emptySlots = maxInventorySize - inventory.Count;
-        float baseNewMaskChance = (unownedMasks.Count > 0) ? (15f + (15f * emptySlots)) : 0f;
+        // Logic for chance can remain similar, but based on candidate availability
+        float baseNewMaskChance = (candidateMasks.Count > 0) ? (15f + (15f * emptySlots)) : 0f;
 
         // Tracking picked items in this reward phase to avoid duplicates among the 3 options
         List<string> pickedMaskIds = new List<string>();
@@ -502,7 +539,7 @@ public class GameManager : MonoBehaviour
             RewardOption opt = new RewardOption();
 
             // Filter out masks already picked for other slots in this phase
-            List<MaskData> availableMasks = unownedMasks.FindAll(m => !pickedMaskIds.Contains(m.id));
+            List<MaskData> availableMasks = candidateMasks.FindAll(m => !pickedMaskIds.Contains(m.id));
 
             // Calculate available reward types and their weights
             float currentNewMaskChance = (availableMasks.Count > 0) ? baseNewMaskChance : 0f;
@@ -604,21 +641,7 @@ public class GameManager : MonoBehaviour
             {
                 // Upgrade currently equipped mask
                 MaskData m = inventory[equippedMaskIndex];
-                m.level++;
-
-                // Passive stats formula: InitialStat * (1 + (Level - 1) * 0.5)
-                MaskData initial = GameData.GetMask(m.id);
-                if (initial != null)
-                {
-                    float multiplier = 1f + (m.level - 1) * 0.5f;
-                    m.passiveHP = initial.passiveHP * multiplier;
-                    m.passiveDef = initial.passiveDef * multiplier;
-                    m.passiveSpeed = initial.passiveSpeed * multiplier;
-                    m.passiveAtkEff = initial.passiveAtkEff * multiplier;
-                    m.passiveAtkSpeedAccel = initial.passiveAtkSpeedAccel * multiplier;
-                    m.passiveRange = initial.passiveRange * multiplier;
-                    m.passiveStamina = initial.passiveStamina * multiplier;
-                }
+                UpgradeMask(m);
 
                 player.InitializePlayer(playerBaseData, inventory, equippedMaskIndex);
                 Debug.Log($"Upgraded Equipped Mask to Lv.{m.level}");
