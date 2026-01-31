@@ -286,13 +286,32 @@ public class UIManager : MonoBehaviour
         detailPanel.SetActive(true);
         detailPanel.transform.SetAsLastSibling();
         if (detailName) detailName.text = mask.name;
-        if (detailDesc) detailDesc.text = $"{mask.description}\n\n" +
-                          $"<color=#FFFF00>EQUIP STATS</color>\n" +
-                          $"Atk: {mask.equipAtk}, Interval: {mask.equipInterval}s, Def: {mask.equipDef}%\n" +
-                          $"Range: {mask.equipRange}, Knockback: {mask.equipKnockback}\n" +
-                          $"<color=#00FFFF>PASSIVE STATS (Owned)</color>\n" +
-                          $"HP: {mask.passiveHP}, AtkEff: {mask.passiveAtkEff}%, Speed: {mask.passiveSpeed}%\n" +
-                          $"Def: {mask.passiveDef}%, Range: {mask.passiveRange}";
+        if (detailDesc)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append(mask.description);
+            sb.Append("\n\n<color=#FFFF00>EQUIP STATS</color>\n");
+
+            var equipStats = new List<string>();
+            if (mask.equipAtk != 0) equipStats.Add($"Atk: {mask.equipAtk}");
+            if (mask.equipInterval != 0) equipStats.Add($"Interval: {mask.equipInterval}s");
+            if (mask.equipDef != 0) equipStats.Add($"Def: {mask.equipDef}%");
+            if (mask.equipRange != 0) equipStats.Add($"Range: {mask.equipRange}");
+            if (mask.equipKnockback != 0) equipStats.Add($"Knockback: {mask.equipKnockback}");
+            sb.Append(string.Join(", ", equipStats));
+
+            sb.Append("\n<color=#00FFFF>PASSIVE STATS (Owned)</color>\n");
+
+            var passiveStats = new List<string>();
+            if (mask.passiveHP != 0) passiveStats.Add($"HP: {mask.passiveHP}");
+            if (mask.passiveAtkEff != 0) passiveStats.Add($"AtkEff: {mask.passiveAtkEff}%");
+            if (mask.passiveSpeed != 0) passiveStats.Add($"Speed: {mask.passiveSpeed}%");
+            if (mask.passiveDef != 0) passiveStats.Add($"Def: {mask.passiveDef}%");
+            if (mask.passiveRange != 0) passiveStats.Add($"Range: {mask.passiveRange}");
+            sb.Append(string.Join(", ", passiveStats));
+
+            detailDesc.text = sb.ToString();
+        }
     }
 
     public void HideMaskDetail()
@@ -358,51 +377,97 @@ public class UIManager : MonoBehaviour
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() => selectedRewardIndex = index);
 
-        string titleText = "";
-        string descText = opt.description;
-        Color visualColor = Color.white;
+        RewardCard rewardCard = card.GetComponent<RewardCard>();
+        if (rewardCard != null)
+        {
+            rewardCard.SetData(opt);
+        }
+    }
 
-        if (opt.type == RewardType.NewMask)
+    private string GetStatLine(string key, float val, string unit, bool showPlus)
+    {
+        if(val == 0)
         {
-            titleText = opt.maskData.name;
-            descText = $"{opt.maskData.description}\n\n" +
-                       $"Equip Atk: {opt.maskData.equipAtk}\n" +
-                       $"Passive HP: {opt.maskData.passiveHP}";
-            visualColor = opt.maskData.color;
-        }
-        else if (opt.type == RewardType.UpgradeMask)
-        {
-            titleText = "UPGRADE MASK";
-            visualColor = Color.cyan;
-            if (GameManager.Instance.equippedMaskIndex >= 0)
-            {
-                var m = GameManager.Instance.inventory[GameManager.Instance.equippedMaskIndex];
-                descText = $"{m.name}\nLv. {m.level} -> Lv. {m.level + 1}";
-            }
-        }
-        else if (opt.type == RewardType.StatBoost)
-        {
-            titleText = "STAT BOOST";
-            visualColor = Color.green;
-            descText = "Permanent Stats:\n";
-            foreach (var kv in opt.statData.effects)
-            {
-                descText += $"{kv.Key}: {kv.Value}%\n";
-            }
+            return "";
         }
 
-        Transform titleTr = card.transform.Find("Title");
-        if (titleTr) titleTr.GetComponent<TextMeshProUGUI>().text = titleText;
+        string iconTag = GetStatIconTag(key);
+        string sign = (showPlus && val > 0) ? "+" : "";
+        string formattedVal = "";
 
-        Transform descTr = card.transform.Find("Desc");
-        if (descTr) descTr.GetComponent<TextMeshProUGUI>().text = descText;
+        if (key.ToLower() == "cooldown") formattedVal = val.ToString("F2");
+        else if (key.ToLower() == "range" || key.ToLower() == "kb" || key.ToLower() == "move") formattedVal = val.ToString("F1");
+        else formattedVal = val.ToString("F0");
 
-        Transform iconTr = card.transform.Find("Icon");
-        if (iconTr)
+        // Apply % unit for efficiency/accel if not provided
+        if (string.IsNullOrEmpty(unit))
         {
-            var img = iconTr.GetComponent<Image>();
-            if (img) img.color = visualColor;
+            if (key.ToLower() == "atk" || key.ToLower() == "speed" || key.ToLower() == "def") unit = "%";
         }
+
+        return $"{iconTag} {sign}{formattedVal}{unit}\n";
+    }
+
+    private string GetStatListForMask(MaskData m)
+    {
+        string s = "";
+        s += GetStatLine("hp", m.passiveHP, "", false);
+        s += GetStatLine("atk", m.passiveAtkEff, "%", false);
+        s += GetStatLine("speed", m.passiveAtkSpeedAccel, "%", false);
+        s += GetStatLine("def", m.passiveDef, "%", false);
+        s += GetStatLine("range", m.passiveRange, "", false);
+        s += GetStatLine("move", m.passiveSpeed, "", false);
+        return s;
+    }
+
+    private string GetStatUpgradeList(MaskData initial, int currLvl, int nextLvl)
+    {
+        string s = "";
+        float currMult = 1f + (currLvl - 1) * 0.5f;
+        float nextMult = 1f + (nextLvl - 1) * 0.5f;
+
+        s += GetStatUpgradeLine("hp", initial.passiveHP, currMult, nextMult, "");
+        s += GetStatUpgradeLine("atk", initial.passiveAtkEff, currMult, nextMult, "%");
+        s += GetStatUpgradeLine("speed", initial.passiveAtkSpeedAccel, currMult, nextMult, "%");
+        s += GetStatUpgradeLine("def", initial.passiveDef, currMult, nextMult, "%");
+        s += GetStatUpgradeLine("range", initial.passiveRange, currMult, nextMult, "");
+        s += GetStatUpgradeLine("move", initial.passiveSpeed, currMult, nextMult, "");
+
+        return s;
+    }
+
+    private string GetStatUpgradeLine(string key, float baseVal, float cMult, float nMult, string unit)
+    {
+        if(baseVal == 0)
+        {
+            return "";
+        }
+
+        string iconTag = GetStatIconTag(key);
+        float curr = baseVal * cMult;
+        float next = baseVal * nMult;
+
+        string fmt = (key.ToLower() == "range" || key.ToLower() == "move") ? "F1" : "F0";
+        return $"{iconTag} {curr.ToString(fmt)}{unit} -> <color=#00FF00>{next.ToString(fmt)}{unit}</color>\n";
+    }
+
+    private string GetStatIconTag(string key)
+    {
+        string spriteName = "";
+        switch (key.ToLower())
+        {
+            case "hp": spriteName = "health icon"; break;
+            case "atk": spriteName = "attack icon"; break;
+            case "baseatk": spriteName = "attack icon"; break;
+            case "speed": spriteName = "attack cooltime icon"; break;
+            case "cooldown": spriteName = "attack cooltime icon"; break;
+            case "def": spriteName = "defense icon"; break;
+            case "range": spriteName = "attack range icon"; break;
+            case "kb": spriteName = "knockback icon"; break;
+            case "move": spriteName = "movement speed icon"; break;
+            default: spriteName = "IconName"; break;
+        }
+        return $"<sprite name=\"{spriteName}\">";
     }
 
     // --- Replace Mask Panel ---

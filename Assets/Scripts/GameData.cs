@@ -236,9 +236,15 @@ public static class GameData
         return pool[Random.Range(0, pool.Count)];
     }
 
-    public static StatRewardData GetRandomStatReward()
+    public static StatRewardData GetRandomStatReward(List<string> excludeIds = null)
     {
-        return allStatRewards[Random.Range(0, allStatRewards.Count)];
+        var pool = allStatRewards;
+        if (excludeIds != null && excludeIds.Count > 0)
+        {
+            pool = allStatRewards.Where(s => !excludeIds.Contains(s.id)).ToList();
+        }
+        if (pool.Count == 0) return allStatRewards.Count > 0 ? allStatRewards[0] : null;
+        return pool[Random.Range(0, pool.Count)];
     }
 }
 
