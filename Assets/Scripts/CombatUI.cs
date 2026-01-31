@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
@@ -13,12 +13,14 @@ public class CombatUI : MonoBehaviour
     public TextMeshProUGUI defText;
     public TextMeshProUGUI moveSpeedText;
     public TextMeshProUGUI knockbackText;
+    public TextMeshProUGUI currentCostText;
 
     [Header("Inventory")]
     public Transform inventoryContainer;
 
-    public void UpdateStats(float currentHP, float maxHP, float atk, float cooldown, float range, float def, float speed, float knockback)
+    public void UpdateStats(float currentHP, float maxHP, float atk, float cooldown, float range, float def, float speed, float knockback, int currentCost)
     {
+        currentCostText.text = $"{currentCost}";
         // 1. HP
         if (hpBarFill != null && maxHP > 0)
         {

@@ -252,7 +252,8 @@ public class UIManager : MonoBehaviour
             player.finalRange,
             player.finalDef,
             player.moveSpeed,
-            player.finalKnockback
+            player.finalKnockback,
+            (int)player.currentStamina
         );
     }
 
