@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4278841614615887652}
   - component: {fileID: 2608358380844276001}
   - component: {fileID: 75742631101867807}
+  - component: {fileID: -5823840433217269120}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -172,6 +173,23 @@ MonoBehaviour:
     color: {r: 0, g: 0, b: 0, a: 0}
     prefabPath: 
     iconName: 
+--- !u!114 &-5823840433217269120
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1577165461129975801}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b073e6c852077ef459ca7c629982459f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GOHelper
+  destroyTime: 0
+  OnEnableLog: 1
+  OnDisableLog: 0
+  OnDestroyLog: 0
+  StopOnLog: 0
 --- !u!1 &4761454748520671671
 GameObject:
   m_ObjectHideFlags: 0
@@ -601,7 +619,7 @@ Transform:
   m_GameObject: {fileID: 5540889770792580280}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.3, z: 0}
+  m_LocalPosition: {x: 0, y: 2.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

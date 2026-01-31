@@ -92,7 +92,7 @@ public class Unit : MonoBehaviour
             }
             else
             {
-                hudObj.transform.localPosition = Vector3.up * 1.3f; // Position above unit
+                hudObj.transform.localPosition = Vector3.up * 2.5f; // Position above unit
             }
 
             unitHUD = hudObj.GetComponent<UnitHUD>();
