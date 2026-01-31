@@ -687,6 +687,7 @@ public class UIManager : MonoBehaviour
     {
         GameObject fpsObj = new GameObject("FPSDisplay");
         fpsObj.transform.SetParent(mainCanvas.transform, false);
+        fpsObj.transform.localPosition = new Vector3(-300, 100, 0);
         fpsDisplay = fpsObj.AddComponent<FPSDisplay>();
     }
 }
