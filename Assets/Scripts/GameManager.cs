@@ -286,6 +286,11 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
+    public void TransitionTest(int transitionTestStageLevel)
+    {
+        OnStageStart?.Invoke(transitionTestStageLevel);
+    }
+
     // --- Game Loop ---
 
     async UniTaskVoid GameLoop()

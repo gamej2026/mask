@@ -16,4 +16,13 @@ public class GameOption : MonoBehaviour
         }
     }
     public float spawnHeight = -1.2f;
+
+
+    public int transitionTestStageLevel;
+    [ContextMenu("트렌지션 테스트")]
+    public void SetTransitionTestStageLevel()
+    {
+        GameManager.Instance.TransitionTest(transitionTestStageLevel);
+    }
+
 }
