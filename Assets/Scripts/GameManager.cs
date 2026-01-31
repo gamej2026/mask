@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
@@ -8,6 +9,8 @@ using TMPro;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
+
+    public event Action<int> OnStageStart;
 
     public Unit player;
     private Unit enemy;
@@ -288,6 +291,8 @@ public class GameManager : MonoBehaviour
     {
         while (true)
         {
+            OnStageStart?.Invoke(stageCount);
+
             // Check Stage Data
             StageData stageData = GameData.GetStage(stageCount);
             if (stageData == null)
