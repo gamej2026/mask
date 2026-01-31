@@ -30,7 +30,10 @@ public class PrefabSaverEditorTest
         var renderer = cube.GetComponent<Renderer>();
         if (renderer != null)
         {
-            renderer.material.color = new Color(Random.value, Random.value, Random.value);
+            // Create a new material to avoid modifying the shared default material
+            Material mat = new Material(renderer.sharedMaterial);
+            mat.color = new Color(Random.value, Random.value, Random.value);
+            renderer.sharedMaterial = mat;
         }
         
         // 자식 오브젝트 추가 (구)
@@ -92,7 +95,10 @@ public class PrefabSaverEditorTest
             var renderer = child.GetComponent<Renderer>();
             if (renderer != null)
             {
-                renderer.material.color = new Color(Random.value, Random.value, Random.value);
+                // Create a new material to avoid modifying the shared default material
+                Material mat = new Material(renderer.sharedMaterial);
+                mat.color = new Color(Random.value, Random.value, Random.value);
+                renderer.sharedMaterial = mat;
             }
             
             // 손자 오브젝트 추가
