@@ -344,10 +344,6 @@ public class Unit : MonoBehaviour
     {
         lastAttackTime = Time.time;
 
-        // Visual Punch
-        Vector3 punchDir = (target.transform.position - transform.position).normalized;
-        transform.DOPunchPosition(punchDir * 0.2f, 0.1f, 10, 1);
-
         if (team == Team.Player)
         {
             // Execute based on ActionType
