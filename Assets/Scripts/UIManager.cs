@@ -164,19 +164,8 @@ public class UIManager : MonoBehaviour
     public void ShowOpeningPanel()
     {
         HideAllPanels();
-        EnsureEventSystem();
         openingPanel.SetActive(true);
         openingPanel.transform.SetAsLastSibling();
-    }
-
-    private void EnsureEventSystem()
-    {
-        if (FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
-        {
-            GameObject eventSystem = new GameObject("EventSystem");
-            eventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();
-            eventSystem.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
-        }
     }
 
     private void HideAllPanels()
