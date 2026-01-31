@@ -1,13 +1,56 @@
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 public class InventorySlotHandler : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
     public int slotIndex;
+    public Image iconImage;
+
     private bool isPressed = false;
     private float pressTime;
     private bool isLongPressTriggered = false;
     private const float holdDuration = 0.3f; // 0.3s for faster feedback
+
+    void Awake()
+    {
+        if (iconImage == null)
+        {
+            Transform t = transform.Find("Icon");
+            if (t != null) iconImage = t.GetComponent<Image>();
+        }
+    }
+
+    public void SetMask(MaskData mask)
+    {
+        if (mask == null)
+        {
+            if (iconImage != null)
+            {
+                iconImage.color = Color.clear;
+                iconImage.sprite = null;
+            }
+            return;
+        }
+
+        if (iconImage != null)
+        {
+            // Default to color
+            iconImage.color = mask.color;
+            iconImage.sprite = null;
+
+            // Try load icon
+            if (!string.IsNullOrEmpty(mask.iconName))
+            {
+                Sprite s = Resources.Load<Sprite>(mask.iconName);
+                if (s != null)
+                {
+                    iconImage.sprite = s;
+                    iconImage.color = Color.white;
+                }
+            }
+        }
+    }
 
     void Update()
     {

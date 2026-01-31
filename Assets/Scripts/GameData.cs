@@ -47,6 +47,7 @@ public class MaskData
 
     public Color color;
     public string prefabPath;
+    public string iconName;
 
     public MaskData Copy()
     {
@@ -140,6 +141,9 @@ public static class GameData
 
             if (row.ContainsKey("PrefabPath"))
                 m.prefabPath = row["PrefabPath"].ToString();
+
+            if (row.ContainsKey("IconName"))
+                m.iconName = row["IconName"].ToString();
 
             allMasks.Add(m);
         }
