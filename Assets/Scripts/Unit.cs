@@ -55,6 +55,7 @@ public class Unit : MonoBehaviour
     private Renderer rend;
     private Color originalColor;
     private GameObject currentMaskObject;
+    private Transform maskPosTransform;
 
     // Active Mask
     public MaskData equippedMask;
@@ -135,6 +136,24 @@ public class Unit : MonoBehaviour
         {
             originalColor = data.color;
             rend.material.color = originalColor;
+        }
+
+        // Find MaskPos if not already found
+        if (maskPosTransform == null)
+        {
+            maskPosTransform = transform.Find("MaskPos");
+            if (maskPosTransform == null)
+            {
+                // Recursive search
+                foreach (Transform t in GetComponentsInChildren<Transform>())
+                {
+                    if (t.name == "MaskPos")
+                    {
+                        maskPosTransform = t;
+                        break;
+                    }
+                }
+            }
         }
 
         UpdateMaskVisuals();
@@ -259,9 +278,18 @@ public class Unit : MonoBehaviour
             GameObject maskPrefab = Resources.Load<GameObject>(equippedMask.prefabPath);
             if (maskPrefab != null)
             {
-                currentMaskObject = Instantiate(maskPrefab, transform);
-                // Assume mask prefab is centered or properly offset.
-                currentMaskObject.transform.localPosition = Vector3.zero;
+                if (team == Team.Player && maskPosTransform != null)
+                {
+                    currentMaskObject = Instantiate(maskPrefab, maskPosTransform);
+                    currentMaskObject.transform.localPosition = Vector3.zero;
+                    currentMaskObject.transform.localRotation = Quaternion.identity;
+                }
+                else
+                {
+                    currentMaskObject = Instantiate(maskPrefab, transform);
+                    // Assume mask prefab is centered or properly offset.
+                    currentMaskObject.transform.localPosition = Vector3.zero;
+                }
             }
         }
     }
