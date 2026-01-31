@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
@@ -65,15 +65,25 @@ public class Unit : MonoBehaviour
         rend = GetComponent<Renderer>();
         CreateUnitHUD();
     }
-
+    GameObject hudObj;
     void CreateUnitHUD()
     {
         GameObject prefab = Resources.Load<GameObject>("Prefabs/UI/UnitHUD");
         if (prefab != null)
         {
-            GameObject hudObj = Instantiate(prefab, transform);
+            hudObj = Instantiate(prefab, transform);
             hudObj.name = "UnitHUD";
-            hudObj.transform.localPosition = Vector3.up * 2f; // Position above unit
+            var hudPosTr = transform.Find("HUDPos");
+            if(hudPosTr)
+            {
+                hudObj.transform.SetParent(hudPosTr);
+                hudObj.transform.localPosition = Vector3.zero;
+            }
+            else
+            {
+                hudObj.transform.localPosition = Vector3.up * 1.3f; // Position above unit
+            }
+
             unitHUD = hudObj.GetComponent<UnitHUD>();
         }
     }
@@ -158,6 +168,9 @@ public class Unit : MonoBehaviour
         baseKnockback = data.knockback;
         baseMaxStamina = data.maxStamina;
         transform.localScale = Vector3.one * data.scale;
+
+        Vector3 parentScale = hudObj.transform.parent.lossyScale;
+        hudObj.transform.localScale = new Vector3(1f / parentScale.x, 1f / parentScale.y, 1f / parentScale.z);
 
         equippedMask = null;
         RecalculateStats();
