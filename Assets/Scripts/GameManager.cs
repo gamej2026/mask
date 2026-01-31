@@ -27,6 +27,8 @@ public class GameManager : MonoBehaviour
     public int equippedMaskIndex = -1;
     private UnitData playerBaseData;
 
+    private System.Threading.CancellationTokenSource gameLoopCTS;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void InitializeGame()
     {
@@ -43,6 +45,11 @@ public class GameManager : MonoBehaviour
         // Re-initialize game data if needed and ensure manager exists
         GameData.Initialize();
         EnsureGameManagerExists();
+
+        if (Instance != null)
+        {
+            Instance.HandleSceneChange(scene.name);
+        }
     }
 
     static void EnsureGameManagerExists()
@@ -64,24 +71,121 @@ public class GameManager : MonoBehaviour
 
     void Awake()
     {
-        Instance = this;
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     void Start()
+    {
+        HandleSceneChange(SceneManager.GetActiveScene().name);
+    }
+
+    private void EnsureUIManagerExists()
+    {
+        if (uiManager != null) return;
+
+        uiManager = FindFirstObjectByType<UIManager>();
+        if (uiManager != null) return;
+
+        GameObject uiPrefab = Resources.Load<GameObject>("Prefabs/Managers/UIManager");
+        if (uiPrefab != null)
+        {
+            GameObject uiObj = Instantiate(uiPrefab);
+            uiObj.name = "UIManager";
+            uiManager = uiObj.GetComponent<UIManager>();
+            if (uiManager == null) uiManager = uiObj.AddComponent<UIManager>();
+        }
+        else
+        {
+            GameObject uiObj = new GameObject("UIManager");
+            uiManager = uiObj.AddComponent<UIManager>();
+        }
+    }
+
+    private void HandleSceneChange(string sceneName)
+    {
+        // Cancel existing loop if any
+        if (gameLoopCTS != null)
+        {
+            gameLoopCTS.Cancel();
+            gameLoopCTS.Dispose();
+            gameLoopCTS = null;
+        }
+
+        EnsureUIManagerExists();
+
+        if (sceneName == "Opening")
+        {
+            if (uiManager != null)
+            {
+                uiManager.SetGameplayUIActive(false);
+                uiManager.ShowOpeningUI(true);
+            }
+        }
+        else if (sceneName == "Test")
+        {
+            if (uiManager != null)
+            {
+                uiManager.ShowOpeningUI(false);
+                uiManager.SetGameplayUIActive(true);
+            }
+            StartInGame();
+        }
+    }
+
+    private void StartInGame()
     {
         SetupScene();
 
         playerBaseData = GameData.GetUnit("PlayerCharacter");
 
-        // 먼저 플레이어 스탯을 초기화 (스태미나 포함)
-        player.InitializePlayer(playerBaseData, new List<MaskData>(), -1);
+        if (player != null)
+        {
+            // 먼저 플레이어 스탯을 초기화 (스태미나 포함)
+            player.InitializePlayer(playerBaseData, new List<MaskData>(), -1);
 
-        // Give default mask
-        MaskData defaultMask = GameData.allMasks.Count > 0 ? GameData.allMasks[0].Copy() : new MaskData();
-        AddMaskToInventory(defaultMask);
-        EquipMask(0);
+            // Give default mask if inventory empty (fresh start)
+            if (inventory.Count == 0)
+            {
+                MaskData defaultMask = GameData.allMasks.Count > 0 ? GameData.allMasks[0].Copy() : new MaskData();
+                AddMaskToInventory(defaultMask);
+                EquipMask(0);
+            }
+            else
+            {
+                // Re-initialize with existing inventory if we came back from somewhere or reloaded
+                player.InitializePlayer(playerBaseData, inventory, equippedMaskIndex);
+            }
+        }
 
-        GameLoop().Forget();
+        gameLoopCTS = new System.Threading.CancellationTokenSource();
+        GameLoop(gameLoopCTS.Token).Forget();
+    }
+
+    public void StartGame()
+    {
+        SceneManager.LoadScene("Test");
+    }
+
+    public void GoToMain()
+    {
+        stageCount = 1;
+        inventory.Clear();
+        equippedMaskIndex = -1;
+        SceneManager.LoadScene("Opening");
+    }
+
+    public void QuitGame()
+    {
+        Debug.Log("Quitting Game...");
+        Application.Quit();
     }
 
     void SetupScene()
@@ -135,22 +239,7 @@ public class GameManager : MonoBehaviour
         }
 
         // UIManager
-        if (uiManager == null) // Check if assigned via Inspector (if GameManager was prefab)
-        {
-            GameObject uiPrefab = Resources.Load<GameObject>("Prefabs/Managers/UIManager");
-            if (uiPrefab != null)
-            {
-                GameObject uiObj = Instantiate(uiPrefab);
-                uiObj.name = "UIManager";
-                uiManager = uiObj.GetComponent<UIManager>();
-                if (uiManager == null) uiManager = uiObj.AddComponent<UIManager>();
-            }
-            else
-            {
-                GameObject uiObj = new GameObject("UIManager");
-                uiManager = uiObj.AddComponent<UIManager>();
-            }
-        }
+        EnsureUIManagerExists();
 
         // Create Player
         if (player == null) // Check if assigned via Inspector
@@ -247,9 +336,9 @@ public class GameManager : MonoBehaviour
 
     // --- Game Loop ---
 
-    async UniTaskVoid GameLoop()
+    async UniTaskVoid GameLoop(System.Threading.CancellationToken token)
     {
-        while (true)
+        while (!token.IsCancellationRequested)
         {
             // Check Stage Data
             StageData stageData = GameData.GetStage(stageCount);
@@ -268,10 +357,12 @@ public class GameManager : MonoBehaviour
                 SoundManager.Instance.PlayBGM(stageData.bgm);
             }
 
-            await MovePhase();
+            await MovePhase(token);
+            if (token.IsCancellationRequested) return;
 
             bool isBoss = (stageCount == 4); // Hardcoded for now based on prompt, or check StageData
-            await BattlePhase(stageData);
+            await BattlePhase(stageData, token);
+            if (token.IsCancellationRequested) return;
 
             if (player.currentHealth <= 0)
             {
@@ -292,15 +383,17 @@ public class GameManager : MonoBehaviour
             // Spawn Reward Box at last enemy position
             if (enemy != null)
             {
-                await WaitForBoxClick(enemy.transform.position);
+                await WaitForBoxClick(enemy.transform.position, token);
             }
 
-            await RewardPhase();
+            if (token.IsCancellationRequested) return;
+
+            await RewardPhase(token);
             stageCount++;
         }
     }
 
-    async UniTask WaitForBoxClick(Vector3 position)
+    async UniTask WaitForBoxClick(Vector3 position, System.Threading.CancellationToken token)
     {
         SoundManager.Instance.PlaySFX("reward box drop sound"); // 보상 드랍 효과음
         GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -314,7 +407,7 @@ public class GameManager : MonoBehaviour
         box.transform.DOMoveY(position.y + 0.5f, 1f).SetLoops(-1, LoopType.Yoyo);
 
         bool clicked = false;
-        while (!clicked)
+        while (!clicked && !token.IsCancellationRequested)
         {
             if (Input.GetMouseButtonDown(0))
             {
@@ -333,13 +426,26 @@ public class GameManager : MonoBehaviour
             await UniTask.Yield();
         }
 
+        if (token.IsCancellationRequested)
+        {
+            if (box != null)
+            {
+                box.transform.DOKill();
+                Destroy(box);
+            }
+            return;
+        }
+
         SoundManager.Instance.PlaySFX("reward gain sound"); // 보상 수령 효과음
 
-        box.transform.DOKill();
-        Destroy(box);
+        if (box != null)
+        {
+            box.transform.DOKill();
+            Destroy(box);
+        }
     }
 
-    async UniTask MovePhase()
+    async UniTask MovePhase(System.Threading.CancellationToken token)
     {
         currentState = GameState.Move;
         Debug.Log("Starting Move Phase");
@@ -355,7 +461,7 @@ public class GameManager : MonoBehaviour
         float startX = player.transform.position.x;
         float targetX = startX + totalDist;
 
-        await player.transform.DOMoveX(targetX, duration).SetEase(Ease.Linear).AsyncWaitForCompletion();
+        await player.transform.DOMoveX(targetX, duration).SetEase(Ease.Linear).ToUniTask(cancellationToken: token);
 
         player.isMovingScenario = false;
         player.state = UnitState.Idle;
@@ -371,7 +477,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    async UniTask BattlePhase(StageData stageData)
+    async UniTask BattlePhase(StageData stageData, System.Threading.CancellationToken token)
     {
         currentState = GameState.Battle;
         Debug.Log($"Starting Battle Phase (Stage {stageCount})");
@@ -435,7 +541,7 @@ public class GameManager : MonoBehaviour
             if (uiManager != null) uiManager.ShowBattleTimer(true);
 
             // Wait for death with overtime buff logic
-            while (player.currentHealth > 0 && enemy.currentHealth > 0)
+            while (player.currentHealth > 0 && enemy.currentHealth > 0 && !token.IsCancellationRequested)
             {
                 float elapsed = Time.time - battleStartTime;
 
@@ -550,14 +656,14 @@ public class GameManager : MonoBehaviour
         return options;
     }
 
-    async UniTask RewardPhase()
+    async UniTask RewardPhase(System.Threading.CancellationToken token)
     {
         currentState = GameState.Reward;
         Debug.Log("Starting Reward Phase");
 
         List<RewardOption> options = GenerateRewardOptions();
 
-        int selectedIndex = await uiManager.ShowRewardSelection(options);
+        int selectedIndex = await uiManager.ShowRewardSelection(options, token);
 
         if (selectedIndex < 0 || selectedIndex >= options.Count)
         {
