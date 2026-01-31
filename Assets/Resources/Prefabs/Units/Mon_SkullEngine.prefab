@@ -159,6 +159,7 @@ MonoBehaviour:
   target: {fileID: 0}
   isMovingScenario: 0
   bodyOffset: {x: 0, y: 1.5, z: -1}
+  maskPosTransform: {fileID: 0}
   equippedMask:
     id: 
     name: 
@@ -251,8 +252,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7453665399306153577}
   m_Father: {fileID: 490738583174512490}
