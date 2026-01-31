@@ -363,7 +363,7 @@ public class Unit : MonoBehaviour
         // Stamina Recovery
         if (maxStamina > 0 && currentStamina < maxStamina)
         {
-            currentStamina += Time.deltaTime / 5f;
+            currentStamina += Time.deltaTime / GameOption.Instance.staminaPerSecond;
             if (currentStamina > maxStamina) currentStamina = maxStamina;
         }
 

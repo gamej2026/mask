@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using DG.Tweening;
 
 public class BackgroundColorChanger : MonoBehaviour
@@ -13,6 +13,13 @@ public class BackgroundColorChanger : MonoBehaviour
 
     private void Start()
     {
+#if UNITY_EDITOR
+        if(GameOption.Instance.startStageLevel > 0)
+        {
+            GameManager.Instance.stageCount = GameOption.Instance.startStageLevel;
+        }
+#endif
+
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnStageStart += HandleStageChange;

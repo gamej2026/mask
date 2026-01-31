@@ -427,10 +427,19 @@ public class GameManager : MonoBehaviour
         SoundManager.Instance.PlaySFX("monster encounter sound"); // 몬스터 조우 시 효과음
         foreach (string monId in stageData.monsterIds)
         {
-            UnitData uData = GameData.GetUnit(monId);
+            string currentMonId = monId;
+#if UNITY_EDITOR
+            if (!string.IsNullOrEmpty(GameOption.Instance.forceSpawnMonsterID))
+            {
+                currentMonId = GameOption.Instance.forceSpawnMonsterID;
+                GameOption.Instance.forceSpawnMonsterID = ""; // Reset
+            }
+#endif
+
+            UnitData uData = GameData.GetUnit(currentMonId);
             if (uData == null)
             {
-                Debug.LogError($"Monster ID {monId} not found in GameData.");
+                Debug.LogError($"Monster ID {currentMonId} not found in GameData.");
                 continue;
             }
             // Spawn
@@ -446,9 +455,10 @@ public class GameManager : MonoBehaviour
             {
                 monPrefab = Resources.Load<GameObject>(uData.prefabPath);
             } 
-            Debug.LogWarning($"Spawning Monster: {monId} at {monPrefab}");
+            Debug.LogWarning($"Spawning Monster: {currentMonId} at {monPrefab}");
 
-            if (monPrefab == null) monPrefab = Resources.Load<GameObject>($"Prefabs/Units/{monId}");
+
+            if (monPrefab == null) monPrefab = Resources.Load<GameObject>($"Prefabs/Units/{currentMonId}");
             if (monPrefab == null) monPrefab = Resources.Load<GameObject>("Prefabs/Units/Monster");
 
             if (monPrefab != null)
