@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
@@ -29,7 +29,7 @@ public class Projectile : MonoBehaviour
 
         if (target != null)
         {
-            direction = (target.transform.position - transform.position).normalized;
+            direction = (target.transform.position + target.bodyOffset - transform.position).normalized;
             direction.z = 0; // side-scroller (XY plane)
         }
         else

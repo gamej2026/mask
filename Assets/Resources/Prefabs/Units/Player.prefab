@@ -132,6 +132,9 @@ MonoBehaviour:
   permAtkSpeedAccelBonus: 0
   permHPBonus: 0
   permStaminaBonus: 0
+  permRangeBonus: 0
+  permMoveSpeedBonus: 0
+  permKnockbackBonus: 0
   maxHealth: 100
   maxStamina: 0
   moveSpeed: 5
@@ -146,6 +149,7 @@ MonoBehaviour:
   currentStamina: 0
   target: {fileID: 0}
   isMovingScenario: 1
+  bodyOffset: {x: 0, y: 0.5, z: -1}
   equippedMask:
     id: 
     name: 

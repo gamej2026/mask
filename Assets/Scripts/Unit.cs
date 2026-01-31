@@ -54,6 +54,8 @@ public class Unit : MonoBehaviour
     public Unit target;
     public bool isMovingScenario = false;
 
+    public Vector3 bodyOffset = Vector3.zero;
+
     private UnitHUD unitHUD;
     private Renderer rend;
     private Color originalColor;
@@ -497,6 +499,9 @@ public class Unit : MonoBehaviour
         UpdateVisuals();
         ShowText($"-{reducedDamage:F0}", Color.red);
 
+        // 피격 이펙트 재생
+        SpawnHitEffect();
+
         if (currentHealth <= 0)
         {
             currentHealth = 0;
@@ -505,6 +510,25 @@ public class Unit : MonoBehaviour
         else
         {
             HitRoutine(knockback).Forget();
+        }
+    }
+
+    void SpawnHitEffect()
+    {
+        GameObject effectPrefab = Resources.Load<GameObject>("Prefabs/Effect/HitEffect");
+        if (effectPrefab != null)
+        {
+            GameObject effect = Instantiate(effectPrefab, transform.position + bodyOffset, Quaternion.identity);
+            ParticleSystem ps = effect.GetComponent<ParticleSystem>();
+            if (ps != null)
+            {
+                ps.Play();
+                Destroy(effect, ps.main.duration + 0.5f);
+            }
+            else
+            {
+                Destroy(effect, 2f);
+            }
         }
     }
 
