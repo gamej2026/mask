@@ -25,6 +25,7 @@ public class GameManager : MonoBehaviour
     public List<MaskData> inventory = new List<MaskData>();
     public int maxInventorySize = 4;
     public int equippedMaskIndex = -1;
+    private UnitData playerBaseData;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void InitializeGame()
@@ -68,6 +69,8 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         SetupScene();
+
+        playerBaseData = GameData.GetUnit("PlayerCharacter");
 
         // Give default mask
         MaskData defaultMask = GameData.allMasks.Count > 0 ? GameData.allMasks[0].Copy() : new MaskData();
@@ -232,10 +235,9 @@ public class GameManager : MonoBehaviour
         if (index < 0 || index >= inventory.Count) return;
 
         equippedMaskIndex = index;
-        MaskData mask = inventory[index];
-        player.InitializePlayer(mask);
+        player.InitializePlayer(playerBaseData, inventory, equippedMaskIndex);
 
-        Debug.Log($"Equipped Mask: {mask.name}");
+        Debug.Log($"Equipped Mask: {inventory[index].name}");
 
         // Update UI if needed (via UIManager)
         if (uiManager != null) uiManager.UpdateInventoryUI();
@@ -323,9 +325,51 @@ public class GameManager : MonoBehaviour
                 return; // Stop the loop
             }
 
+            // Spawn Reward Box at last enemy position
+            if (enemy != null)
+            {
+                await WaitForBoxClick(enemy.transform.position);
+            }
+
             await RewardPhase();
             stageCount++;
         }
+    }
+
+    async UniTask WaitForBoxClick(Vector3 position)
+    {
+        GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        box.name = "RewardBox";
+        box.transform.position = position;
+        box.transform.localScale = Vector3.one * 0.8f;
+        var rend = box.GetComponent<Renderer>();
+        if (rend) rend.material.color = new Color(0.8f, 0.5f, 0.2f); // Wood color
+
+        // Add a simple float effect
+        box.transform.DOMoveY(position.y + 0.5f, 1f).SetLoops(-1, LoopType.Yoyo);
+
+        bool clicked = false;
+        while (!clicked)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
+                // Use RaycastAll to be sure we hit the box in 2D/3D mix
+                RaycastHit[] hits = Physics.RaycastAll(ray);
+                foreach (var hit in hits)
+                {
+                    if (hit.collider.gameObject == box)
+                    {
+                        clicked = true;
+                        break;
+                    }
+                }
+            }
+            await UniTask.Yield();
+        }
+
+        box.transform.DOKill();
+        Destroy(box);
     }
 
     async UniTask MovePhase()
@@ -335,8 +379,9 @@ public class GameManager : MonoBehaviour
 
         float screenHeight = mainCam.orthographicSize * 2f;
         float screenWidth = screenHeight * mainCam.aspect;
-        float totalDist = screenWidth * 2f;
-        float duration = 4f;
+        // Characters move 3 times the screen width in 5 seconds
+        float totalDist = screenWidth * 3f;
+        float duration = 5f;
 
         player.isMovingScenario = true;
 
@@ -366,8 +411,8 @@ public class GameManager : MonoBehaviour
 
         foreach (string monId in stageData.monsterIds)
         {
-            MonsterData mData = GameData.GetMonster(monId);
-            if (mData == null) continue;
+            UnitData uData = GameData.GetUnit(monId);
+            if (uData == null) continue;
 
             // Spawn
             float screenHeight = mainCam.orthographicSize * 2f;
@@ -383,28 +428,21 @@ public class GameManager : MonoBehaviour
             if (monPrefab != null)
             {
                 eObj = Instantiate(monPrefab, spawnPos, Quaternion.identity);
-                eObj.name = mData.name;
+                eObj.name = uData.name;
             }
             else
             {
                 eObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                eObj.name = mData.name;
+                eObj.name = uData.name;
                 eObj.transform.position = spawnPos;
             }
 
             enemy = eObj.GetComponent<Unit>();
             if (enemy == null) enemy = eObj.AddComponent<Unit>();
-            enemy.InitializeMonster(mData);
+            enemy.InitializeMonster(uData);
 
             player.target = enemy;
             enemy.target = player;
-
-            // Move enemy into view? The prompt says "Enemy enters screen".
-            // Currently spawnPos is offscreen.
-            // Existing logic: "Enemy enters screen" (Move 3x dist?).
-            // User Design: "Enemy enters screen... Player Stops... Combat".
-            // My Unit code has Move behavior if target is far. So Enemy will move to Player.
-            // Player will move to Enemy. They meet and fight.
 
             // Wait for death
             await UniTask.WaitUntil(() => player.currentHealth <= 0 || enemy.currentHealth <= 0);
@@ -413,17 +451,17 @@ public class GameManager : MonoBehaviour
 
             enemy.state = UnitState.Die;
             player.target = null;
+
             await UniTask.Delay(1000);
             if (enemy != null) Destroy(enemy.gameObject);
         }
+
+        // Recover 10% of max health after the whole battle phase ends
+        player.Heal(player.maxHealth * 0.1f);
     }
 
-    async UniTask RewardPhase()
+    private List<RewardOption> GenerateRewardOptions()
     {
-        currentState = GameState.Reward;
-        Debug.Log("Starting Reward Phase");
-
-        // Generate 3 Options
         List<RewardOption> options = new List<RewardOption>();
 
         // Pre-check for unowned masks to prevent duplicates and handle empty pool
@@ -469,6 +507,15 @@ public class GameManager : MonoBehaviour
             }
             options.Add(opt);
         }
+        return options;
+    }
+
+    async UniTask RewardPhase()
+    {
+        currentState = GameState.Reward;
+        Debug.Log("Starting Reward Phase");
+
+        List<RewardOption> options = GenerateRewardOptions();
 
         int selectedIndex = await uiManager.ShowRewardSelection(options);
 
@@ -517,10 +564,14 @@ public class GameManager : MonoBehaviour
             {
                 // Upgrade currently equipped mask
                 MaskData m = inventory[equippedMaskIndex];
-                m.atkBonus += 2f;
-                m.hpBonus += 10f;
-                player.ApplyMask(m); // Re-apply to update stats
-                Debug.Log("Upgraded Equipped Mask");
+                m.level++;
+                // Increase some stats
+                m.equipAtk += 5f;
+                m.passiveHP += 10f;
+                m.passiveAtkEff += 2f;
+
+                player.InitializePlayer(playerBaseData, inventory, equippedMaskIndex);
+                Debug.Log($"Upgraded Equipped Mask to Lv.{m.level}");
             }
         }
         else if (choice.type == RewardType.StatBoost)
@@ -528,12 +579,23 @@ public class GameManager : MonoBehaviour
             // Apply Stat Boost Effects
             if (choice.statData != null)
             {
-                foreach (var kvp in choice.statData.effects)
-                {
-                    player.ApplyStatBoost(kvp.Key, kvp.Value);
-                }
+                player.ApplyStatReward(choice.statData);
                 Debug.Log($"Applied Stat Boost: {choice.statData.name}");
             }
+        }
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Q)) EquipMask(0);
+        if (Input.GetKeyDown(KeyCode.W)) EquipMask(1);
+        if (Input.GetKeyDown(KeyCode.E)) EquipMask(2);
+        if (Input.GetKeyDown(KeyCode.R)) EquipMask(3);
+
+        // Update Player Stats UI
+        if (player != null && uiManager != null)
+        {
+            uiManager.UpdatePlayerStatsUI(player.currentHealth, player.maxHealth, player.finalAtkInterval);
         }
     }
 }

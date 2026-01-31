@@ -1,6 +1,6 @@
-ID,Name,Desc,ActionType,SkillType,HPBonus,AtkBonus,SpdBonus,RangeBonus,ColorHex
-mask_default,Iron Mask,Standard issue mask.,Attack,None,0,0,0,0,AAAAAA
-mask_cat,Cat Mask,Agile but weak.,Attack,DoubleStrike,-10,-2,-0.3,2,000000
-mask_half,Half Mask,Powerful strikes.,Attack,KnockbackBoost,-30,15,0.2,0,DAA520
-mask_healer,Saint Mask,Heals while attacking.,Heal,None,20,-5,0,0,FFFFFF
-mask_buffer,Warlord Mask,Grows stronger over time.,Buff,None,50,0,0.1,0,FF0000
+ID,Name,Desc,ActionType,PassiveHP,PassiveDef,PassiveMoveSpeed,PassiveAtkEff,PassiveAtkSpeedAccel,PassiveRange,EquipAtk,EquipAtkInterval,EquipDef,EquipRange,EquipKnockback,ColorHex
+mask_default,Iron Mask,Standard issue mask.,Attack,0,0,0,0,0,0,10,1,0,1.5,1,AAAAAA
+mask_cat,Cat Mask,Agile and fast.,Attack,0,0,0.5,0,20,0,5,0.5,0,2,0.5,000000
+mask_half,Half Mask,Powerful but heavy.,Attack,0,10,-0.2,20,0,0,20,1.5,10,1.5,2,DAA520
+mask_healer,Saint Mask,Heals while attacking.,Heal,10,0,0,0,0,0,5,1,5,1.5,1,FFFFFF
+mask_buffer,Warlord Mask,Growth focus.,AtkBuff,0,5,0,10,0,0,8,1.2,5,1.5,1,FF0000
