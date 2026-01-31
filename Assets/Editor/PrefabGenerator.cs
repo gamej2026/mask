@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 using System.IO;
 using UnityEngine.UI;
@@ -15,6 +15,7 @@ public class PrefabGenerator
         EnsureDirectory("Assets/Resources/Prefabs/Units");
         EnsureDirectory("Assets/Resources/Prefabs/UI");
         EnsureDirectory("Assets/Resources/Prefabs/Projectiles");
+        EnsureDirectory("Assets/Resources/Materials");
 
         // 1. Managers
         CreatePrefab("Prefabs/Managers/GameManager", CreateGameManager);
