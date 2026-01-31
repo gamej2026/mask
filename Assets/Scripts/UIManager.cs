@@ -36,6 +36,7 @@ public class UIManager : MonoBehaviour
     void Awake()
     {
         SetupCanvas();
+        SetupHUD();
         SetupInventoryHUD();
         SetupRewardPanel();
         SetupReplacePanel();
@@ -77,6 +78,101 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    // --- In-Game HUD ---
+
+    private void SetupHUD()
+    {
+        GameObject hudPanel = new GameObject("InGameHUD");
+        hudPanel.transform.SetParent(mainCanvas.transform, false);
+        Image bg = hudPanel.AddComponent<Image>();
+        bg.color = new Color(0.15f, 0.35f, 0.7f, 0.9f); // Blue panel
+
+        RectTransform rect = hudPanel.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0, 0);
+        rect.anchorMax = new Vector2(1, 0);
+        rect.pivot = new Vector2(0.5f, 0);
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = new Vector2(0, 220); // Height 220
+
+        // 1. HP Bar
+        GameObject hpBg = new GameObject("HP_BG");
+        hpBg.transform.SetParent(hudPanel.transform, false);
+        Image hpBgImg = hpBg.AddComponent<Image>();
+        hpBgImg.color = Color.gray;
+        RectTransform hpBgRect = hpBg.GetComponent<RectTransform>();
+        hpBgRect.anchorMin = new Vector2(0, 1);
+        hpBgRect.anchorMax = new Vector2(0, 1);
+        hpBgRect.pivot = new Vector2(0, 1);
+        hpBgRect.anchoredPosition = new Vector2(100, -30);
+        hpBgRect.sizeDelta = new Vector2(400, 40);
+
+        GameObject hpFill = new GameObject("HP_Fill");
+        hpFill.transform.SetParent(hpBg.transform, false);
+        Image hpFillImg = hpFill.AddComponent<Image>();
+        hpFillImg.color = Color.red;
+        RectTransform hpFillRect = hpFill.GetComponent<RectTransform>();
+        hpFillRect.anchorMin = new Vector2(0, 0);
+        hpFillRect.anchorMax = new Vector2(0.6f, 1); // 60% full for prototype
+        hpFillRect.offsetMin = Vector2.zero;
+        hpFillRect.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI hpText = CreateText(hudPanel.transform, "HP_Text", "500 / 999", 28, new Vector2(600, 170));
+        hpText.alignment = TextAlignmentOptions.Left;
+        hpText.rectTransform.anchorMin = hpText.rectTransform.anchorMax = new Vector2(0, 0); // Bottom Left anchor
+
+        // 2. Defense
+        CreateStatElement(hudPanel.transform, "Defense", "🛡️", "25%", new Vector2(750, 170), Color.gray);
+
+        // 3. Attack Power
+        CreateStatElement(hudPanel.transform, "AtkPower", "🪓", "10.5  (  7      X  150%  )", new Vector2(100, 110), new Color(0.9f, 0.5f, 0.2f));
+
+        // 4. Attack Cooldown
+        CreateStatElement(hudPanel.transform, "AtkCooldown", "⏳", "4 sec  (  6 sec  /  150%  )", new Vector2(100, 50), Color.yellow);
+
+        // 5. Attack Range
+        CreateStatElement(hudPanel.transform, "AtkRange", "🏹", "4.5", new Vector2(500, 110), Color.green);
+
+        // 7. Move Speed
+        CreateStatElement(hudPanel.transform, "MoveSpeed", "🏃", "2", new Vector2(500, 50), Color.cyan);
+
+        // 6. Knockback
+        CreateStatElement(hudPanel.transform, "Knockback", "👊", "1", new Vector2(750, 80), Color.yellow);
+    }
+
+    private void CreateStatElement(Transform parent, string name, string iconLabel, string value, Vector2 pos, Color iconColor)
+    {
+        GameObject obj = new GameObject(name);
+        obj.transform.SetParent(parent, false);
+        RectTransform rect = obj.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0, 0);
+        rect.anchorMax = new Vector2(0, 0);
+        rect.pivot = new Vector2(0, 0.5f);
+        rect.anchoredPosition = pos;
+        rect.sizeDelta = new Vector2(400, 50);
+
+        // Icon
+        GameObject icon = new GameObject("Icon");
+        icon.transform.SetParent(obj.transform, false);
+        Image img = icon.AddComponent<Image>();
+        img.color = iconColor;
+        RectTransform iconRect = icon.GetComponent<RectTransform>();
+        iconRect.anchorMin = new Vector2(0, 0.5f);
+        iconRect.anchorMax = new Vector2(0, 0.5f);
+        iconRect.pivot = new Vector2(0, 0.5f);
+        iconRect.anchoredPosition = Vector2.zero;
+        iconRect.sizeDelta = new Vector2(40, 40);
+
+        TextMeshProUGUI iconTxt = CreateText(icon.transform, "IconText", iconLabel, 20, Vector2.zero);
+        iconTxt.rectTransform.sizeDelta = new Vector2(40, 40);
+        iconTxt.color = Color.black;
+
+        // Value Text
+        TextMeshProUGUI valTxt = CreateText(obj.transform, "Value", value, 24, new Vector2(200, 0));
+        valTxt.alignment = TextAlignmentOptions.Left;
+        valTxt.rectTransform.sizeDelta = new Vector2(350, 50);
+        valTxt.rectTransform.anchoredPosition = new Vector2(50, 0);
+    }
+
     // --- Inventory HUD ---
 
     void SetupInventoryHUD()
@@ -97,7 +193,7 @@ public class UIManager : MonoBehaviour
                 rect.anchorMin = new Vector2(0.5f, 0);
                 rect.anchorMax = new Vector2(0.5f, 0);
                 rect.pivot = new Vector2(0.5f, 0);
-                rect.anchoredPosition = new Vector2(0, 50);
+                rect.anchoredPosition = new Vector2(0, 240); // Moved up from 50
                 rect.sizeDelta = new Vector2(600, 120);
 
                 HorizontalLayoutGroup layout = inventoryPanel.AddComponent<HorizontalLayoutGroup>();
