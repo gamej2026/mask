@@ -99,6 +99,7 @@ public class GameManager : MonoBehaviour
         }
         else if (sceneName == "Opening" || sceneName == "OpeningScene") // Support both common names
         {
+            EnsureUIManager();
             if (uiManager != null) uiManager.ShowOpeningPanel();
         }
     }
@@ -137,6 +138,29 @@ public class GameManager : MonoBehaviour
             gameLoopCTS.Cancel();
             gameLoopCTS.Dispose();
             gameLoopCTS = null;
+        }
+    }
+
+    private void EnsureUIManager()
+    {
+        if (uiManager == null)
+        {
+            uiManager = FindFirstObjectByType<UIManager>();
+            if (uiManager == null)
+            {
+                GameObject uiPrefab = Resources.Load<GameObject>("Prefabs/Managers/UIManager");
+                if (uiPrefab != null)
+                {
+                    GameObject uiObj = Instantiate(uiPrefab);
+                    uiObj.name = "UIManager";
+                    uiManager = uiObj.GetComponent<UIManager>();
+                }
+                else
+                {
+                    GameObject uiObj = new GameObject("UIManager");
+                    uiManager = uiObj.AddComponent<UIManager>();
+                }
+            }
         }
     }
 
@@ -217,25 +241,7 @@ public class GameManager : MonoBehaviour
         }
 
         // UIManager - should already exist due to persistence or static init
-        if (uiManager == null)
-        {
-            uiManager = FindFirstObjectByType<UIManager>();
-            if (uiManager == null)
-            {
-                GameObject uiPrefab = Resources.Load<GameObject>("Prefabs/Managers/UIManager");
-                if (uiPrefab != null)
-                {
-                    GameObject uiObj = Instantiate(uiPrefab);
-                    uiObj.name = "UIManager";
-                    uiManager = uiObj.GetComponent<UIManager>();
-                }
-                else
-                {
-                    GameObject uiObj = new GameObject("UIManager");
-                    uiManager = uiObj.AddComponent<UIManager>();
-                }
-            }
-        }
+        EnsureUIManager();
 
         // Create Player
         GameObject pObj = GameObject.Find("Player");

@@ -149,13 +149,13 @@ public class UIManager : MonoBehaviour
             layout.childControlHeight = false;
             layout.childControlWidth = false;
 
-            Button startBtn = CreateButton(btnContainer.transform, "StartBtn", "게임 시작", Vector2.zero);
+            Button startBtn = CreateButton(btnContainer.transform, "StartBtn", "StartGame", Vector2.zero);
             startBtn.onClick.AddListener(() => GameManager.Instance.StartGame());
 
-            Button creditsBtn = CreateButton(btnContainer.transform, "CreditsBtn", "크래딧", Vector2.zero);
+            Button creditsBtn = CreateButton(btnContainer.transform, "CreditsBtn", "Credit", Vector2.zero);
             // Ignored for now as per prompt
 
-            Button exitBtn = CreateButton(btnContainer.transform, "ExitBtn", "게임 종료", Vector2.zero);
+            Button exitBtn = CreateButton(btnContainer.transform, "ExitBtn", "ExitGame", Vector2.zero);
             exitBtn.onClick.AddListener(() => GameManager.Instance.QuitGame());
         }
         openingPanel.SetActive(false);
@@ -712,10 +712,10 @@ public class UIManager : MonoBehaviour
             credRect.pivot = new Vector2(0, 0.5f);
             credRect.anchoredPosition = new Vector2(100, 0);
             credRect.sizeDelta = new Vector2(400, 300);
-            CreateText(gameOverCredits.transform, "Info", "개발자: ...", 30, Vector2.zero);
+            CreateText(gameOverCredits.transform, "Info", "Developer: ...", 30, Vector2.zero);
             gameOverCredits.SetActive(false);
 
-            Button mainBtn = CreateButton(gameOverPanel.transform, "MainBtn", "메인화면으로", new Vector2(0, 0));
+            Button mainBtn = CreateButton(gameOverPanel.transform, "MainBtn", "Main Menu", new Vector2(0, 0));
             // Adjust position to bottom right as per 0.png
             RectTransform btnRect = mainBtn.GetComponent<RectTransform>();
             btnRect.anchorMin = new Vector2(1, 0);
@@ -752,10 +752,10 @@ public class UIManager : MonoBehaviour
             credRect.pivot = new Vector2(0, 0.5f);
             credRect.anchoredPosition = new Vector2(100, 0);
             credRect.sizeDelta = new Vector2(400, 300);
-            CreateText(gameClearCredits.transform, "Info", "개발자: ...", 30, Vector2.zero);
+            CreateText(gameClearCredits.transform, "Info", "Developer: ...", 30, Vector2.zero);
             gameClearCredits.SetActive(false);
 
-            Button mainBtn = CreateButton(gameClearPanel.transform, "MainBtn", "메인화면으로", new Vector2(0, 0));
+            Button mainBtn = CreateButton(gameClearPanel.transform, "MainBtn", "Main Menu", new Vector2(0, 0));
             RectTransform btnRect = mainBtn.GetComponent<RectTransform>();
             btnRect.anchorMin = new Vector2(1, 0);
             btnRect.anchorMax = new Vector2(1, 0);
