@@ -31,6 +31,20 @@ public class GameManager : MonoBehaviour
     {
         GameData.Initialize();
 
+        // Ensure GameManager exists on first load and subscribe to scene reloads
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        EnsureGameManagerExists();
+    }
+
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Re-initialize game data if needed and ensure manager exists
+        GameData.Initialize();
+        EnsureGameManagerExists();
+    }
+
+    static void EnsureGameManagerExists()
+    {
         if (FindFirstObjectByType<GameManager>() == null)
         {
             GameObject prefab = Resources.Load<GameObject>("Prefabs/Managers/GameManager");
