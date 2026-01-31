@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
+using DG.Tweening;
 
 public class UIManager : MonoBehaviour
 {
@@ -234,9 +235,21 @@ public class UIManager : MonoBehaviour
             }
 
             if (i < inventoryHighlights.Count)
-                inventoryHighlights[i].SetActive(i == equipped && i < inv.Count);
+            {
+                bool isActive = (i == equipped && i < inv.Count);
+                inventoryHighlights[i].SetActive(isActive);
+                if(isActive && lastActive != inventoryHighlights[i])
+                {
+                    lastActive = inventoryHighlights[i];
+                    // .fillAmount 0 -> 1 tween
+                    var image = inventoryHighlights[i].GetComponent<Image>();
+                    image.fillAmount = 0;
+                    DOTween.To(() => image.fillAmount, x => image.fillAmount = x, 1f, 0.5f).SetEase(Ease.Linear).From(0f);
+                }
+            }
         }
     }
+    GameObject lastActive;
 
     public void UpdatePlayerStatsUI()
     {
