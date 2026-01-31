@@ -8,6 +8,9 @@ public class UIManager : MonoBehaviour
 {
     [SerializeField] private Canvas mainCanvas;
 
+    // Opening UI
+    [SerializeField] private GameObject openingPanel;
+
     // Reward UI
     [SerializeField] private GameObject rewardPanel;
     private Transform rewardContainer;
@@ -27,8 +30,11 @@ public class UIManager : MonoBehaviour
     // End Game UI
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GameObject gameClearPanel;
+    private GameObject gameOverCredits;
+    private GameObject gameClearCredits;
 
     // Player Stats HUD
+    private GameObject statsPanel;
     private TextMeshProUGUI hpText;
     private TextMeshProUGUI staminaText;
     private TextMeshProUGUI atkSpeedText;
@@ -46,7 +52,21 @@ public class UIManager : MonoBehaviour
 
     void Awake()
     {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.uiManager = this;
+        }
+
+        GameObject existing = GameObject.Find("UIManager");
+        if (existing != null && existing != gameObject)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        DontDestroyOnLoad(gameObject);
+
         SetupCanvas();
+        SetupOpeningPanel();
         SetupInventoryHUD();
         SetupStatsHUD();
         SetupRewardPanel();
@@ -64,7 +84,7 @@ public class UIManager : MonoBehaviour
         GameObject prefab = Resources.Load<GameObject>("Prefabs/UI/MainCanvas");
         if (prefab != null)
         {
-            GameObject obj = Instantiate(prefab);
+            GameObject obj = Instantiate(prefab, transform);
             obj.name = "MainCanvas";
             mainCanvas = obj.GetComponent<Canvas>();
             if (mainCanvas == null) mainCanvas = obj.AddComponent<Canvas>();
@@ -72,6 +92,7 @@ public class UIManager : MonoBehaviour
         else
         {
             GameObject canvasObj = new GameObject("MainCanvas");
+            canvasObj.transform.SetParent(transform);
             mainCanvas = canvasObj.AddComponent<Canvas>();
             mainCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
@@ -88,6 +109,82 @@ public class UIManager : MonoBehaviour
             eventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();
             eventSystem.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
         }
+    }
+
+    // --- Opening UI ---
+
+    void SetupOpeningPanel()
+    {
+        if (openingPanel == null)
+        {
+            openingPanel = CreatePanel(mainCanvas.transform, "OpeningPanel", Color.black);
+
+            // Title Illustration (Transparent)
+            GameObject illustObj = new GameObject("Illustration");
+            illustObj.transform.SetParent(openingPanel.transform, false);
+            Image illustImg = illustObj.AddComponent<Image>();
+            illustImg.color = new Color(1, 1, 1, 0); // Transparent
+            RectTransform illustRect = illustImg.rectTransform;
+            illustRect.anchorMin = Vector2.zero;
+            illustRect.anchorMax = Vector2.one;
+            illustRect.offsetMin = Vector2.zero;
+            illustRect.offsetMax = Vector2.zero;
+
+            // Title Text
+            CreateText(openingPanel.transform, "Title", "MASK GAME", 100, new Vector2(0, 300));
+
+            // Button Container (Bottom Right)
+            GameObject btnContainer = new GameObject("BtnContainer");
+            btnContainer.transform.SetParent(openingPanel.transform, false);
+            RectTransform containerRect = btnContainer.AddComponent<RectTransform>();
+            containerRect.anchorMin = new Vector2(1, 0);
+            containerRect.anchorMax = new Vector2(1, 0);
+            containerRect.pivot = new Vector2(1, 0);
+            containerRect.anchoredPosition = new Vector2(-100, 100);
+            containerRect.sizeDelta = new Vector2(300, 400);
+
+            VerticalLayoutGroup layout = btnContainer.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = 20;
+            layout.childAlignment = TextAnchor.LowerRight;
+            layout.childControlHeight = false;
+            layout.childControlWidth = false;
+
+            Button startBtn = CreateButton(btnContainer.transform, "StartBtn", "게임 시작", Vector2.zero);
+            startBtn.onClick.AddListener(() => GameManager.Instance.StartGame());
+
+            Button creditsBtn = CreateButton(btnContainer.transform, "CreditsBtn", "크래딧", Vector2.zero);
+            // Ignored for now as per prompt
+
+            Button exitBtn = CreateButton(btnContainer.transform, "ExitBtn", "게임 종료", Vector2.zero);
+            exitBtn.onClick.AddListener(() => GameManager.Instance.QuitGame());
+        }
+        openingPanel.SetActive(false);
+    }
+
+    public void ShowOpeningPanel()
+    {
+        HideAllPanels();
+        openingPanel.SetActive(true);
+        openingPanel.transform.SetAsLastSibling();
+    }
+
+    private void HideAllPanels()
+    {
+        if (openingPanel != null) openingPanel.SetActive(false);
+        if (inventoryPanel != null) inventoryPanel.SetActive(false);
+        if (rewardPanel != null) rewardPanel.SetActive(false);
+        if (replacePanel != null) replacePanel.SetActive(false);
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (gameClearPanel != null) gameClearPanel.SetActive(false);
+        if (detailPanel != null) detailPanel.SetActive(false);
+        if (statsPanel != null) statsPanel.SetActive(false);
+    }
+
+    public void ShowGameplayUI()
+    {
+        HideAllPanels();
+        if (inventoryPanel != null) inventoryPanel.SetActive(true);
+        if (statsPanel != null) statsPanel.SetActive(true);
     }
 
     // --- Inventory HUD ---
@@ -264,24 +361,26 @@ public class UIManager : MonoBehaviour
 
     void SetupStatsHUD()
     {
-        GameObject statsObj = new GameObject("StatsHUD");
-        statsObj.transform.SetParent(mainCanvas.transform, false);
-        RectTransform rect = statsObj.AddComponent<RectTransform>();
+        if (statsPanel != null) return;
+
+        statsPanel = new GameObject("StatsHUD");
+        statsPanel.transform.SetParent(mainCanvas.transform, false);
+        RectTransform rect = statsPanel.AddComponent<RectTransform>();
         rect.anchorMin = new Vector2(0, 1);
         rect.anchorMax = new Vector2(0, 1);
         rect.pivot = new Vector2(0, 1);
         rect.anchoredPosition = new Vector2(50, -50);
         rect.sizeDelta = new Vector2(400, 200);
 
-        hpText = CreateText(statsObj.transform, "HPText", "HP: 0/0", 30, new Vector2(100, 0));
+        hpText = CreateText(statsPanel.transform, "HPText", "HP: 0/0", 30, new Vector2(100, 0));
         hpText.alignment = TextAlignmentOptions.Left;
         hpText.color = Color.red;
 
-        staminaText = CreateText(statsObj.transform, "StaminaText", "ST: 0/0", 30, new Vector2(100, -40));
+        staminaText = CreateText(statsPanel.transform, "StaminaText", "ST: 0/0", 30, new Vector2(100, -40));
         staminaText.alignment = TextAlignmentOptions.Left;
         staminaText.color = Color.yellow;
 
-        atkSpeedText = CreateText(statsObj.transform, "AtkSpeedText", "Atk Interval: 0", 30, new Vector2(100, -80));
+        atkSpeedText = CreateText(statsPanel.transform, "AtkSpeedText", "Atk Interval: 0", 30, new Vector2(100, -80));
         atkSpeedText.alignment = TextAlignmentOptions.Left;
     }
 
@@ -593,11 +692,38 @@ public class UIManager : MonoBehaviour
     {
         if (gameOverPanel == null)
         {
-            gameOverPanel = CreatePanel(mainCanvas.transform, "GameOverPanel", new Color(0.5f, 0, 0, 0.8f));
-            CreateText(gameOverPanel.transform, "Title", "GAME OVER", 80, new Vector2(0, 100));
+            gameOverPanel = CreatePanel(mainCanvas.transform, "GameOverPanel", new Color(0, 0, 0, 0.8f));
 
-            Button restartBtn = CreateButton(gameOverPanel.transform, "RestartBtn", "RESTART", new Vector2(0, -100));
-            restartBtn.onClick.AddListener(() => GameManager.Instance.RestartGame());
+            // Illustration (Transparent)
+            GameObject illust = new GameObject("Illustration");
+            illust.transform.SetParent(gameOverPanel.transform, false);
+            Image img = illust.AddComponent<Image>();
+            img.color = new Color(1, 1, 1, 0);
+            img.rectTransform.anchorMin = Vector2.zero;
+            img.rectTransform.anchorMax = Vector2.one;
+
+            CreateText(gameOverPanel.transform, "Title", "GAME OVER", 80, new Vector2(0, 300));
+
+            // Credits Panel
+            gameOverCredits = CreatePanel(gameOverPanel.transform, "Credits", new Color(0.5f, 0.5f, 0.5f, 0.5f));
+            RectTransform credRect = gameOverCredits.GetComponent<RectTransform>();
+            credRect.anchorMin = new Vector2(0, 0.5f);
+            credRect.anchorMax = new Vector2(0, 0.5f);
+            credRect.pivot = new Vector2(0, 0.5f);
+            credRect.anchoredPosition = new Vector2(100, 0);
+            credRect.sizeDelta = new Vector2(400, 300);
+            CreateText(gameOverCredits.transform, "Info", "개발자: ...", 30, Vector2.zero);
+            gameOverCredits.SetActive(false);
+
+            Button mainBtn = CreateButton(gameOverPanel.transform, "MainBtn", "메인화면으로", new Vector2(0, 0));
+            // Adjust position to bottom right as per 0.png
+            RectTransform btnRect = mainBtn.GetComponent<RectTransform>();
+            btnRect.anchorMin = new Vector2(1, 0);
+            btnRect.anchorMax = new Vector2(1, 0);
+            btnRect.pivot = new Vector2(1, 0);
+            btnRect.anchoredPosition = new Vector2(-100, 100);
+
+            mainBtn.onClick.AddListener(() => GameManager.Instance.GoToMain());
         }
         gameOverPanel.SetActive(false);
     }
@@ -606,11 +732,37 @@ public class UIManager : MonoBehaviour
     {
         if (gameClearPanel == null)
         {
-            gameClearPanel = CreatePanel(mainCanvas.transform, "GameClearPanel", new Color(0, 0.5f, 0, 0.8f));
-            CreateText(gameClearPanel.transform, "Title", "GAME CLEAR!", 80, new Vector2(0, 100));
+            gameClearPanel = CreatePanel(mainCanvas.transform, "GameClearPanel", new Color(0, 0, 0, 0.8f));
 
-            Button restartBtn = CreateButton(gameClearPanel.transform, "RestartBtn", "PLAY AGAIN", new Vector2(0, -100));
-            restartBtn.onClick.AddListener(() => GameManager.Instance.RestartGame());
+            // Illustration (Transparent)
+            GameObject illust = new GameObject("Illustration");
+            illust.transform.SetParent(gameClearPanel.transform, false);
+            Image img = illust.AddComponent<Image>();
+            img.color = new Color(1, 1, 1, 0);
+            img.rectTransform.anchorMin = Vector2.zero;
+            img.rectTransform.anchorMax = Vector2.one;
+
+            CreateText(gameClearPanel.transform, "Title", "GAME CLEAR!", 80, new Vector2(0, 300));
+
+            // Credits Panel
+            gameClearCredits = CreatePanel(gameClearPanel.transform, "Credits", new Color(0.5f, 0.5f, 0.5f, 0.5f));
+            RectTransform credRect = gameClearCredits.GetComponent<RectTransform>();
+            credRect.anchorMin = new Vector2(0, 0.5f);
+            credRect.anchorMax = new Vector2(0, 0.5f);
+            credRect.pivot = new Vector2(0, 0.5f);
+            credRect.anchoredPosition = new Vector2(100, 0);
+            credRect.sizeDelta = new Vector2(400, 300);
+            CreateText(gameClearCredits.transform, "Info", "개발자: ...", 30, Vector2.zero);
+            gameClearCredits.SetActive(false);
+
+            Button mainBtn = CreateButton(gameClearPanel.transform, "MainBtn", "메인화면으로", new Vector2(0, 0));
+            RectTransform btnRect = mainBtn.GetComponent<RectTransform>();
+            btnRect.anchorMin = new Vector2(1, 0);
+            btnRect.anchorMax = new Vector2(1, 0);
+            btnRect.pivot = new Vector2(1, 0);
+            btnRect.anchoredPosition = new Vector2(-100, 100);
+
+            mainBtn.onClick.AddListener(() => GameManager.Instance.GoToMain());
         }
         gameClearPanel.SetActive(false);
     }
@@ -619,12 +771,22 @@ public class UIManager : MonoBehaviour
     {
         gameOverPanel.SetActive(true);
         gameOverPanel.transform.SetAsLastSibling();
+        ShowCreditsDelayed(gameOverCredits).Forget();
     }
 
     public void ShowGameClear()
     {
         gameClearPanel.SetActive(true);
         gameClearPanel.transform.SetAsLastSibling();
+        ShowCreditsDelayed(gameClearCredits).Forget();
+    }
+
+    private async UniTaskVoid ShowCreditsDelayed(GameObject creditsObj)
+    {
+        if (creditsObj == null) return;
+        creditsObj.SetActive(false);
+        await UniTask.Delay(2500);
+        if (creditsObj != null) creditsObj.SetActive(true);
     }
 
     // --- Helpers ---
