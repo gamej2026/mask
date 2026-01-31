@@ -93,6 +93,9 @@ public class Unit : MonoBehaviour
     public void InitializePlayer(UnitData data, List<MaskData> inventory, int equippedIndex)
     {
         team = Team.Player;
+        anim = GetComponentInChildren<Animator>();
+        state = UnitState.Move;
+        if (anim != null) anim.Play("Move", 0, 0f);
         if (data == null)
         {
             // Fallback
@@ -293,11 +296,6 @@ public class Unit : MonoBehaviour
                 }
             }
         }
-
-        if (currentMaskObject != null)
-            anim = currentMaskObject.GetComponent<Animator>();
-        else
-            anim = GetComponentInChildren<Animator>();
     }
 
     public void ApplyStatReward(StatRewardData reward)
