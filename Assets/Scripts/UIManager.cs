@@ -30,7 +30,7 @@ public class UIManager : MonoBehaviour
     private TextMeshProUGUI detailName;
     private TextMeshProUGUI detailDesc;
 
-    // FPS Display
+    // FPS Display - kept for potential future control (e.g., toggle on/off)
     private FPSDisplay fpsDisplay;
 
     private int selectedRewardIndex = -1;

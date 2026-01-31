@@ -29,6 +29,7 @@ public class FPSDisplay : MonoBehaviour
 
     void Update()
     {
+        // Smooth deltaTime every frame for accurate FPS measurement
         deltaTime += (Time.unscaledDeltaTime - deltaTime) * 0.1f;
         timeSinceLastUpdate += Time.unscaledDeltaTime;
 
