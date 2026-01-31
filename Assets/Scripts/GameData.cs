@@ -2,18 +2,13 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-public enum SkillType
-{
-    None,
-    DoubleStrike,
-    KnockbackBoost
-}
-
 public enum ActionType
 {
     Attack,
     Heal,
-    Buff
+    AtkBuff,
+    SpeedBuff,
+    HPBuff
 }
 
 public enum RewardType
@@ -29,15 +24,23 @@ public class MaskData
     public string id;
     public string name;
     public string description;
-
     public ActionType actionType;
-    public SkillType skill;
+    public int level = 1;
 
-    public float hpBonus;
-    public float atkBonus;
-    public float atkSpeedBonus;
-    public float moveSpeedBonus;
-    public float rangeBonus;
+    // Passive Stats (Inventory-wide)
+    public float passiveHP;
+    public float passiveDef;
+    public float passiveSpeed; // Changed from passiveMoveSpeed to match Unit.cs
+    public float passiveAtkEff;
+    public float passiveAtkSpeedAccel;
+    public float passiveRange;
+
+    // Equip Stats (Only when active)
+    public float equipAtk;
+    public float equipInterval; // Changed from equipAtkInterval to match Unit.cs
+    public float equipDef;
+    public float equipRange;
+    public float equipKnockback;
 
     public Color color;
 
@@ -48,13 +51,16 @@ public class MaskData
 }
 
 [System.Serializable]
-public class MonsterData
+public class UnitData
 {
     public string id;
     public string name;
     public float hp;
-    public float atk;
-    public float speed;
+    public float atkEff;
+    public float atkSpeedAccel;
+    public float moveSpeed;
+    public float def;
+    public float atkInterval;
     public float range;
     public float knockback;
     public float scale;
@@ -80,14 +86,14 @@ public class StatRewardData
 public static class GameData
 {
     public static List<MaskData> allMasks = new List<MaskData>();
-    public static List<MonsterData> allMonsters = new List<MonsterData>();
+    public static List<UnitData> allUnits = new List<UnitData>();
     public static List<StageData> allStages = new List<StageData>();
     public static List<StatRewardData> allStatRewards = new List<StatRewardData>();
 
     public static void Initialize()
     {
         LoadMasks();
-        LoadMonsters();
+        LoadUnits();
         LoadStages();
         LoadStatRewards();
     }
@@ -104,42 +110,51 @@ public static class GameData
             m.name = row["Name"].ToString();
             m.description = row["Desc"].ToString();
             m.actionType = (ActionType)System.Enum.Parse(typeof(ActionType), row["ActionType"].ToString());
-            m.skill = (SkillType)System.Enum.Parse(typeof(SkillType), row["SkillType"].ToString());
-            m.hpBonus = float.Parse(row["HPBonus"].ToString());
-            m.atkBonus = float.Parse(row["AtkBonus"].ToString());
-            m.atkSpeedBonus = float.Parse(row["SpdBonus"].ToString());
-            m.rangeBonus = float.Parse(row["RangeBonus"].ToString());
+
+            m.passiveHP = float.Parse(row["PassiveHP"].ToString());
+            m.passiveDef = float.Parse(row["PassiveDef"].ToString());
+            m.passiveSpeed = float.Parse(row["PassiveMoveSpeed"].ToString());
+            m.passiveAtkEff = float.Parse(row["PassiveAtkEff"].ToString());
+            m.passiveAtkSpeedAccel = float.Parse(row["PassiveAtkSpeedAccel"].ToString());
+            m.passiveRange = float.Parse(row["PassiveRange"].ToString());
+
+            m.equipAtk = float.Parse(row["EquipAtk"].ToString());
+            m.equipInterval = float.Parse(row["EquipAtkInterval"].ToString());
+            m.equipDef = float.Parse(row["EquipDef"].ToString());
+            m.equipRange = float.Parse(row["EquipRange"].ToString());
+            m.equipKnockback = float.Parse(row["EquipKnockback"].ToString());
 
             ColorUtility.TryParseHtmlString("#" + row["ColorHex"].ToString(), out m.color);
-
-            // Fix alpha if needed
             m.color.a = 1f;
 
             allMasks.Add(m);
         }
     }
 
-    private static void LoadMonsters()
+    private static void LoadUnits()
     {
-        allMonsters.Clear();
-        List<Dictionary<string, object>> data = CSVReader.Read("Data/MonsterData");
+        allUnits.Clear();
+        List<Dictionary<string, object>> data = CSVReader.Read("Data/UnitData");
 
         foreach (var row in data)
         {
-            MonsterData m = new MonsterData();
-            m.id = row["ID"].ToString();
-            m.name = row["Name"].ToString();
-            m.hp = float.Parse(row["HP"].ToString());
-            m.atk = float.Parse(row["Atk"].ToString());
-            m.speed = float.Parse(row["Speed"].ToString());
-            m.range = float.Parse(row["Range"].ToString());
-            m.knockback = float.Parse(row["Knockback"].ToString());
-            m.scale = float.Parse(row["Scale"].ToString());
+            UnitData u = new UnitData();
+            u.id = row["ID"].ToString();
+            u.name = row["Name"].ToString();
+            u.hp = float.Parse(row["HP"].ToString());
+            u.atkEff = float.Parse(row["AtkEff"].ToString());
+            u.atkSpeedAccel = float.Parse(row["AtkSpeedAccel"].ToString());
+            u.moveSpeed = float.Parse(row["MoveSpeed"].ToString());
+            u.def = float.Parse(row["Def"].ToString());
+            u.atkInterval = float.Parse(row["AtkInterval"].ToString());
+            u.range = float.Parse(row["Range"].ToString());
+            u.knockback = float.Parse(row["Knockback"].ToString());
+            u.scale = float.Parse(row["Scale"].ToString());
 
-            ColorUtility.TryParseHtmlString("#" + row["ColorHex"].ToString(), out m.color);
-            m.color.a = 1f;
+            ColorUtility.TryParseHtmlString("#" + row["ColorHex"].ToString(), out u.color);
+            u.color.a = 1f;
 
-            allMonsters.Add(m);
+            allUnits.Add(u);
         }
     }
 
@@ -184,7 +199,7 @@ public static class GameData
     }
 
     public static MaskData GetMask(string id) => allMasks.Find(m => m.id == id);
-    public static MonsterData GetMonster(string id) => allMonsters.Find(m => m.id == id);
+    public static UnitData GetUnit(string id) => allUnits.Find(u => u.id == id);
     public static StageData GetStage(int id) => allStages.Find(s => s.stageId == id);
 
     public static MaskData GetRandomMask(List<string> excludeIds = null)
@@ -241,7 +256,8 @@ public class CSVReader
 
             for (int j = 0; j < header.Length && j < values.Length; j++)
             {
-                entry[header[j]] = values[j];
+                if (j < values.Length)
+                    entry[header[j]] = values[j];
             }
             list.Add(entry);
         }

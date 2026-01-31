@@ -25,6 +25,10 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GameObject gameClearPanel;
 
+    // Player Stats HUD
+    private TextMeshProUGUI hpText;
+    private TextMeshProUGUI atkSpeedText;
+
     // Detail UI
     [SerializeField] private GameObject detailPanel;
     private TextMeshProUGUI detailName;
@@ -37,6 +41,7 @@ public class UIManager : MonoBehaviour
     {
         SetupCanvas();
         SetupInventoryHUD();
+        SetupStatsHUD();
         SetupRewardPanel();
         SetupReplacePanel();
         SetupDetailPanel();
@@ -201,6 +206,32 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    // --- Stats HUD ---
+
+    void SetupStatsHUD()
+    {
+        GameObject statsObj = new GameObject("StatsHUD");
+        statsObj.transform.SetParent(mainCanvas.transform, false);
+        RectTransform rect = statsObj.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0, 1);
+        rect.anchorMax = new Vector2(0, 1);
+        rect.pivot = new Vector2(0, 1);
+        rect.anchoredPosition = new Vector2(50, -50);
+        rect.sizeDelta = new Vector2(400, 150);
+
+        hpText = CreateText(statsObj.transform, "HPText", "HP: 0/0", 30, new Vector2(100, 0));
+        hpText.alignment = TextAlignmentOptions.Left;
+
+        atkSpeedText = CreateText(statsObj.transform, "AtkSpeedText", "Atk Interval: 0", 30, new Vector2(100, -50));
+        atkSpeedText.alignment = TextAlignmentOptions.Left;
+    }
+
+    public void UpdatePlayerStatsUI(float currentHP, float maxHP, float atkInterval)
+    {
+        if (hpText != null) hpText.text = $"HP: {Mathf.Ceil(currentHP)} / {Mathf.Ceil(maxHP)}";
+        if (atkSpeedText != null) atkSpeedText.text = $"Atk Interval: {atkInterval:F2}s";
+    }
+
     // --- Detail Panel ---
 
     void SetupDetailPanel()
@@ -249,7 +280,13 @@ public class UIManager : MonoBehaviour
         detailPanel.SetActive(true);
         detailPanel.transform.SetAsLastSibling();
         detailName.text = mask.name;
-        detailDesc.text = $"{mask.description}\n\n<color=#FFFF00>STATS</color>\nATK: {mask.atkBonus}\nHP: {mask.hpBonus}\nSPD: {mask.moveSpeedBonus}\nRNG: {mask.rangeBonus}";
+        detailDesc.text = $"{mask.description}\n\n" +
+                          $"<color=#FFFF00>EQUIP STATS</color>\n" +
+                          $"Atk: {mask.equipAtk}, Interval: {mask.equipInterval}s, Def: {mask.equipDef}%\n" +
+                          $"Range: {mask.equipRange}, Knockback: {mask.equipKnockback}\n" +
+                          $"<color=#00FFFF>PASSIVE STATS (Owned)</color>\n" +
+                          $"HP: {mask.passiveHP}, AtkEff: {mask.passiveAtkEff}%, Speed: {mask.passiveSpeed}%\n" +
+                          $"Def: {mask.passiveDef}%, Range: {mask.passiveRange}";
     }
 
     public void HideMaskDetail()
@@ -352,13 +389,20 @@ public class UIManager : MonoBehaviour
         if (opt.type == RewardType.NewMask)
         {
             titleText = opt.maskData.name;
-            descText = $"{opt.maskData.description}\n\nATK: {opt.maskData.atkBonus}\nSPD: {opt.maskData.moveSpeedBonus}";
+            descText = $"{opt.maskData.description}\n\n" +
+                       $"Equip Atk: {opt.maskData.equipAtk}\n" +
+                       $"Passive HP: {opt.maskData.passiveHP}";
             visualColor = opt.maskData.color;
         }
         else if (opt.type == RewardType.UpgradeMask)
         {
             titleText = "UPGRADE MASK";
             visualColor = Color.cyan;
+            if (GameManager.Instance.equippedMaskIndex >= 0)
+            {
+                var m = GameManager.Instance.inventory[GameManager.Instance.equippedMaskIndex];
+                descText = $"{m.name}\nLv. {m.level} -> Lv. {m.level + 1}";
+            }
         }
         else if (opt.type == RewardType.StatBoost)
         {

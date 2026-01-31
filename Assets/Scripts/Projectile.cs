@@ -5,6 +5,8 @@ public class Projectile : MonoBehaviour
     public float speed = 10f;
     public float damage;
     public float knockback;
+    public float maxDistance;
+    private float distanceTraveled = 0f;
     public Unit target;
     public Unit owner;
     public float collisionRadius = 0.5f; // Radius for collision detection
@@ -16,18 +18,19 @@ public class Projectile : MonoBehaviour
     private float lastCollisionCheckTime = 0f;
     private const float collisionCheckInterval = 0.05f; // Check collision every 0.05 seconds
 
-    public void Initialize(Unit _owner, Unit _target, float _damage, float _knockback)
+    public void Initialize(Unit _owner, Unit _target, float _damage, float _knockback, float _maxDistance)
     {
         owner = _owner;
         target = _target;
         damage = _damage;
         knockback = _knockback;
+        maxDistance = _maxDistance;
         rb = GetComponent<Rigidbody>();
 
         if (target != null)
         {
             direction = (target.transform.position - transform.position).normalized;
-            direction.y = 0;
+            direction.z = 0; // side-scroller (XY plane)
         }
         else
         {
@@ -48,15 +51,23 @@ public class Projectile : MonoBehaviour
         // Don't update direction dynamically - use initial direction to prevent backward movement
         // Only keep the initial direction set during Initialize
 
+        float moveStep = speed * Time.fixedDeltaTime;
+        distanceTraveled += moveStep;
+
         if (rb != null)
         {
-            Vector3 nextPos = rb.position + initialDirection * speed * Time.fixedDeltaTime;
+            Vector3 nextPos = rb.position + initialDirection * moveStep;
             rb.MovePosition(nextPos);
         }
         else
         {
-            // Fallback
-            transform.Translate(initialDirection * speed * Time.deltaTime, Space.World);
+            transform.Translate(initialDirection * moveStep, Space.World);
+        }
+
+        if (distanceTraveled >= maxDistance)
+        {
+            Destroy(gameObject);
+            return;
         }
 
         // Check collision with enemies (throttled for performance)
@@ -71,38 +82,21 @@ public class Projectile : MonoBehaviour
     {
         if (owner == null) return;
 
-        // Find all Units in the scene
         Unit[] allUnits = GameObject.FindObjectsByType<Unit>(FindObjectsSortMode.None);
         
         foreach (Unit unit in allUnits)
         {
-            // Skip if it's the owner
             if (unit == owner) continue;
-            
-            // Skip if same team
             if (unit.team == owner.team) continue;
-            
-            // Skip if unit is dead or inactive
             if (unit.state == UnitState.Die || !unit.gameObject.activeInHierarchy) continue;
 
-            // Calculate distance on X axis (primary) and Z axis, ignoring Y for 2D-style gameplay
-            float projectileX = transform.position.x;
-            float projectileZ = transform.position.z;
-            float unitX = unit.transform.position.x;
-            float unitZ = unit.transform.position.z;
+            // Use 3D distance or 2D (XY) distance for side-scroller
+            float dist = Vector3.Distance(transform.position, unit.transform.position);
             
-            // Get unit's scale as radius approximation
             float unitRadius = unit.transform.localScale.x * 0.5f;
             float totalRadius = collisionRadius + unitRadius;
             
-            // Check collision using X and Z position with combined radius
-            float distanceX = Mathf.Abs(projectileX - unitX);
-            float distanceZ = Mathf.Abs(projectileZ - unitZ);
-            
-            // Use 2D distance for more accurate collision detection on the XZ plane
-            float distance2D = Mathf.Sqrt(distanceX * distanceX + distanceZ * distanceZ);
-            
-            if (distance2D <= totalRadius)
+            if (dist <= totalRadius)
             {
                 Debug.Log($"Projectile Hit {unit.name} for {damage}");
                 unit.TakeDamage(damage, knockback);
