@@ -449,6 +449,16 @@ public class Unit : MonoBehaviour
     {
         if (state == UnitState.Die) return;
 
+#if UNITY_EDITOR
+        if (team == Team.Enemy && (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)))
+        {
+            currentHealth = 0;
+            ShowText("INSTANT KILL!", Color.red);
+            Die();
+            return;
+        }
+#endif
+
         float reducedDamage = damage * (1f - finalDef);
         currentHealth -= reducedDamage;
         UpdateVisuals();

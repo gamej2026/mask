@@ -610,6 +610,14 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
+#if UNITY_EDITOR
+        if (Input.GetKeyDown(KeyCode.Alpha1)) HandleCheatMask(0);
+        if (Input.GetKeyDown(KeyCode.Alpha2)) HandleCheatMask(1);
+        if (Input.GetKeyDown(KeyCode.Alpha3)) HandleCheatMask(2);
+        if (Input.GetKeyDown(KeyCode.Alpha4)) HandleCheatMask(3);
+        if (Input.GetKeyDown(KeyCode.Alpha5)) HandleCheatMask(4);
+#endif
+
         if (Input.GetKeyDown(KeyCode.Q)) EquipMask(0);
         if (Input.GetKeyDown(KeyCode.W)) EquipMask(1);
         if (Input.GetKeyDown(KeyCode.E)) EquipMask(2);
@@ -621,4 +629,45 @@ public class GameManager : MonoBehaviour
             uiManager.UpdatePlayerStatsUI();
         }
     }
+
+#if UNITY_EDITOR
+    void HandleCheatMask(int maskIndex)
+    {
+        if (maskIndex < 0 || maskIndex >= GameData.allMasks.Count)
+        {
+            Debug.LogWarning($"Cheat: Mask index {maskIndex} out of range.");
+            return;
+        }
+
+        MaskData mask = GameData.allMasks[maskIndex].Copy();
+
+        bool added = AddMaskToInventory(mask);
+        if (added)
+        {
+             Debug.Log($"Cheat: Added {mask.name} to inventory.");
+        }
+        else
+        {
+             Debug.Log($"Cheat: Inventory full. Triggering replace UI for {mask.name}.");
+             HandleCheatReplace(mask).Forget();
+        }
+    }
+
+    async UniTaskVoid HandleCheatReplace(MaskData mask)
+    {
+        if (uiManager != null)
+        {
+            int replaceIdx = await uiManager.ShowReplaceMaskPopup(mask);
+            if (replaceIdx >= 0)
+            {
+                 ReplaceMaskInInventory(replaceIdx, mask);
+                 Debug.Log($"Cheat: Replaced mask at {replaceIdx} with {mask.name}");
+            }
+            else
+            {
+                 Debug.Log("Cheat: Replacement cancelled.");
+            }
+        }
+    }
+#endif
 }
