@@ -201,8 +201,8 @@ Transform:
   m_GameObject: {fileID: 4761454748520671671}
   serializedVersion: 2
   m_LocalRotation: {x: -0.14219514, y: -0.70030105, z: 0.17936759, w: 0.6761555}
-  m_LocalPosition: {x: 0.014, y: -0.127, z: -0.316}
-  m_LocalScale: {x: 0.0671959, y: 1, z: 0.014135017}
+  m_LocalPosition: {x: 0.0301, y: -0.2847, z: -0.6358}
+  m_LocalScale: {x: 0.1385781, y: 1, z: 0.014135017}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2104622804792303784}
@@ -305,12 +305,12 @@ Cloth:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4761454748520671671}
   m_Enabled: 1
-  m_StretchingStiffness: 1
-  m_BendingStiffness: 1
+  m_StretchingStiffness: 0.5
+  m_BendingStiffness: 0.5
   m_UseTethers: 1
   m_UseGravity: 1
   m_Damping: 0.3
-  m_ExternalAcceleration: {x: -10, y: 0, z: 0}
+  m_ExternalAcceleration: {x: -40, y: 0, z: 0}
   m_RandomAcceleration: {x: 0, y: 0, z: 0}
   m_WorldVelocityScale: 0.5
   m_WorldAccelerationScale: 1
