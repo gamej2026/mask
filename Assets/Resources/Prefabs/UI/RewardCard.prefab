@@ -3477,6 +3477,7 @@ GameObject:
   - component: {fileID: 2086607463498140667}
   - component: {fileID: 6654149656626617994}
   - component: {fileID: 5423727432246820157}
+  - component: {fileID: 6023363535297692739}
   m_Layer: 0
   m_Name: RewardCard
   m_TagString: Untagged
@@ -3585,7 +3586,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2086607463498140667}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 6023363535297692739}
+        m_TargetAssemblyTypeName: SFXPlayer, Assembly-CSharp
+        m_MethodName: PlaySound
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: button click sound
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &5423727432246820157
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3663,6 +3676,19 @@ MonoBehaviour:
   space: {fileID: 5604889903325816769}
   maskEffect: {fileID: 14012294761066215}
   statEffect: {fileID: 8868741405136908545}
+--- !u!114 &6023363535297692739
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5658731364915708410}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7881d075d4551ce4f946a5ffbff96353, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SFXPlayer
+  defaultSound: 
 --- !u!1 &6111678139366407729
 GameObject:
   m_ObjectHideFlags: 0

@@ -65,6 +65,10 @@ public class Unit : MonoBehaviour
     // Active Mask
     public MaskData equippedMask;
 
+    // Sound
+    private string atkSound;
+    private string hitSound;
+
     private Animator anim;
 
     void Awake()
@@ -161,6 +165,10 @@ public class Unit : MonoBehaviour
             }
         }
 
+        // 사운드 설정
+        atkSound = data.atkSound;
+        hitSound = data.hitSound;
+
         UpdateMaskVisuals();
         UpdateVisuals();
     }
@@ -195,6 +203,11 @@ public class Unit : MonoBehaviour
             originalColor = data.color;
             rend.material.color = originalColor;
         }
+
+        // 사운드 설정
+        atkSound = data.atkSound;
+        hitSound = data.hitSound;
+
         UpdateVisuals();
     }
 
@@ -404,6 +417,12 @@ public class Unit : MonoBehaviour
     {
         if (anim != null) anim.SetTrigger("Attack");
 
+        // 공격 사운드 재생
+        if (!string.IsNullOrEmpty(atkSound) && SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(atkSound);
+        }
+
         lastAttackTime = Time.time;
 
         if (team == Team.Player)
@@ -413,22 +432,27 @@ public class Unit : MonoBehaviour
             switch (action)
             {
                 case ActionType.Attack:
+                    SoundManager.Instance.PlaySFX("Projectile attack sound"); // 투사체 생성 시 공통으로 나는 소리
                     SpawnProjectile();
                     break;
                 case ActionType.Heal:
+                    SoundManager.Instance.PlaySFX("heal sound"); // 회복 효과음1
                     Heal(finalAtkPower * 2f);
                     break;
                 case ActionType.AtkBuff:
+                    SoundManager.Instance.PlaySFX("buff sound"); // 버프 효과음1
                     permAtkEffBonus += 1f;
                     RecalculateStats();
                     ShowText("ATK UP!", Color.red);
                     break;
                 case ActionType.SpeedBuff:
+                    SoundManager.Instance.PlaySFX("buff sound"); // 버프 효과음1
                     permAtkSpeedAccelBonus += 1f;
                     RecalculateStats();
                     ShowText("SPD UP!", Color.yellow);
                     break;
                 case ActionType.HPBuff:
+                    SoundManager.Instance.PlaySFX("buff sound"); // 버프 효과음1
                     permHPBonus += 1f;
                     RecalculateStats();
                     ShowText("HP UP!", Color.green);
@@ -498,6 +522,12 @@ public class Unit : MonoBehaviour
         currentHealth -= reducedDamage;
         UpdateVisuals();
         ShowText($"-{reducedDamage:F0}", Color.red);
+
+        // 피격 사운드 재생
+        if (!string.IsNullOrEmpty(hitSound) && SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(hitSound);
+        }
 
         // 피격 이펙트 재생
         SpawnHitEffect();

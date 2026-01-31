@@ -1,9 +1,9 @@
-ID,Name,HP,MaxStamina,AtkEff,AtkSpeedAccel,MoveSpeed,Def,AtkInterval,Range,Knockback,Scale,ColorHex,PrefabPath
-PlayerCharacter,Player,100,10,100,100,2,0,1,1.5,1,1,FFFFFF,Prefabs/Units/Player
-Mon_Zombie,Zombie,100,0,50,80,0.5,20,3,5,2,2.5,FF0000,Prefabs/Units/mon_zombie
-Slime,Green Slime,50,0,10,100,1,0,2,1,0.5,0.8,00FF00,Prefabs/Units/Slime
-Bat,Vampire Bat,30,0,15,120,3,0,1,1,0.2,0.6,333333,Prefabs/Units/Bat
-Boss,Demon King,500,0,50,80,0.5,20,3,5,2,2.5,FF0000,Prefabs/Units/Boss
-Mon_Slime,Slime,50,0,10,100,1,0,2,1,0.5,0.8,00FF00,Prefabs/Units/mon_slime
-Mon_MachineCreature,Machine Creature,80,0,20,90,1.5,5,1.5,1.2,1,1.2,6400,Prefabs/Units/mon_orc
-Mon_SkullEngine,Skull Engine,30,0,15,120,3,0,1,1,0.2,0.6,333333,Prefabs/Units/mon_bat
+ID,Name,HP,MaxStamina,AtkEff,AtkSpeedAccel,MoveSpeed,Def,AtkInterval,Range,Knockback,Scale,ColorHex,PrefabPath,AtkSound,HitSound
+PlayerCharacter,Player,100,10,100,100,2,0,1,1.5,1,1,FFFFFF,Prefabs/Units/Player,player attack sound,player pain sound
+Mon_Zombie,Zombie,100,0,50,80,0.5,20,3,5,2,2.5,FF0000,Prefabs/Units/mon_zombie,monster attack sound,monster grunt sound
+Slime,Green Slime,50,0,10,100,1,0,2,1,0.5,0.8,00FF00,Prefabs/Units/Slime,slime attack sound,slime splat sound
+Bat,Vampire Bat,30,0,15,120,3,0,1,1,0.2,0.6,333333,Prefabs/Units/Bat,monster attack sound,monster grunt sound
+Boss,Demon King,500,0,50,80,0.5,20,3,5,2,2.5,FF0000,Prefabs/Units/Boss,monster attack sound,monster grunt sound
+Mon_Slime,Slime,50,0,10,100,1,0,2,1,0.5,0.8,00FF00,Prefabs/Units/mon_slime,slime attack sound,slime splat sound
+Mon_MachineCreature,Machine Creature,80,0,20,90,1.5,5,1.5,1.2,1,1.2,6400,Prefabs/Units/mon_orc,monster attack sound,monster grunt sound
+Mon_SkullEngine,Skull Engine,30,0,15,120,3,0,1,1,0.2,0.6,333333,Prefabs/Units/mon_bat,monster attack sound,monster grunt sound

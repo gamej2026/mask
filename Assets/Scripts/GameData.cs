@@ -72,6 +72,8 @@ public class UnitData
     public float scale;
     public Color color;
     public string prefabPath;
+    public string atkSound;
+    public string hitSound;
 }
 
 [System.Serializable]
@@ -176,6 +178,11 @@ public static class GameData
 
             if (row.ContainsKey("PrefabPath"))
                 u.prefabPath = row["PrefabPath"].ToString();
+
+            if (row.ContainsKey("AtkSound"))
+                u.atkSound = row["AtkSound"].ToString();
+            if (row.ContainsKey("HitSound"))
+                u.hitSound = row["HitSound"].ToString();
 
             allUnits.Add(u);
         }

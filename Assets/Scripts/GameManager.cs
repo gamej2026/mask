@@ -325,6 +325,7 @@ public class GameManager : MonoBehaviour
 
             if (player.currentHealth <= 0)
             {
+                SoundManager.Instance.PlaySFX("game over sound"); // 게임오버 효과음
                 Debug.Log("Game Over");
                 currentState = GameState.End;
                 uiManager.ShowGameOver();
@@ -351,6 +352,7 @@ public class GameManager : MonoBehaviour
 
     async UniTask WaitForBoxClick(Vector3 position)
     {
+        SoundManager.Instance.PlaySFX("reward box drop sound"); // 보상 드랍 효과음
         GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
         box.name = "RewardBox";
         box.transform.position = position;
@@ -380,6 +382,8 @@ public class GameManager : MonoBehaviour
             }
             await UniTask.Yield();
         }
+
+        SoundManager.Instance.PlaySFX("reward gain sound"); // 보상 수령 효과음
 
         box.transform.DOKill();
         Destroy(box);
@@ -421,7 +425,7 @@ public class GameManager : MonoBehaviour
     {
         currentState = GameState.Battle;
         Debug.Log($"Starting Battle Phase (Stage {stageCount})");
-
+        SoundManager.Instance.PlaySFX("monster encounter sound"); // 몬스터 조우 시 효과음
         foreach (string monId in stageData.monsterIds)
         {
             UnitData uData = GameData.GetUnit(monId);

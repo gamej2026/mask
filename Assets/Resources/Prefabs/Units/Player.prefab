@@ -331,10 +331,31 @@ PrefabInstance:
     - {fileID: -8700617353114198275, guid: 3a40ca858ab38f846aaf79b1c3cada66, type: 3}
     - {fileID: 65702495048144492, guid: 3a40ca858ab38f846aaf79b1c3cada66, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 3a40ca858ab38f846aaf79b1c3cada66, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9182869788647601546}
   m_SourcePrefab: {fileID: 100100000, guid: 3a40ca858ab38f846aaf79b1c3cada66, type: 3}
 --- !u!4 &4671309788760595281 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3a40ca858ab38f846aaf79b1c3cada66, type: 3}
   m_PrefabInstance: {fileID: 5141258087371127994}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &5447107238031327723 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 3a40ca858ab38f846aaf79b1c3cada66, type: 3}
+  m_PrefabInstance: {fileID: 5141258087371127994}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &9182869788647601546
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5447107238031327723}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7881d075d4551ce4f946a5ffbff96353, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SFXPlayer
+  defaultSound: 
