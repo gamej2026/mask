@@ -164,6 +164,7 @@ public class Unit : MonoBehaviour
     {
         anim = GetComponentInChildren<Animator>();
         team = Team.Enemy;
+        transform.rotation = Quaternion.Euler(0, 180, 0);
         baseMaxHealth = data.hp;
         baseAtkEff = data.atkEff;
         baseAtkSpeedAccel = data.atkSpeedAccel;
