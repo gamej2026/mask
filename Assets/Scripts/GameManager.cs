@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
+using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
@@ -564,7 +565,7 @@ public class GameManager : MonoBehaviour
                 continue;
             }
 
-            float roll = Random.Range(0f, totalChance);
+            float roll = UnityEngine.Random.Range(0f, totalChance);
 
             if (roll < currentNewMaskChance)
             {
