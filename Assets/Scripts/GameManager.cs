@@ -31,6 +31,7 @@ public class GameManager : MonoBehaviour
     static void InitializeGame()
     {
         GameData.Initialize();
+        SoundManager.Initialize();
 
         // Ensure GameManager exists on first load and subscribe to scene reloads
         SceneManager.sceneLoaded += OnSceneLoaded;
