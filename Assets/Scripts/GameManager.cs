@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
@@ -31,6 +31,20 @@ public class GameManager : MonoBehaviour
     {
         GameData.Initialize();
 
+        // Ensure GameManager exists on first load and subscribe to scene reloads
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        EnsureGameManagerExists();
+    }
+
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Re-initialize game data if needed and ensure manager exists
+        GameData.Initialize();
+        EnsureGameManagerExists();
+    }
+
+    static void EnsureGameManagerExists()
+    {
         if (FindFirstObjectByType<GameManager>() == null)
         {
             GameObject prefab = Resources.Load<GameObject>("Prefabs/Managers/GameManager");
@@ -171,7 +185,7 @@ public class GameManager : MonoBehaviour
             }
 
             player = pObj.GetComponent<Unit>();
-            if(player == null) player = pObj.AddComponent<Unit>();
+            if (player == null) player = pObj.AddComponent<Unit>();
 
             // Initialize will be called after equipping mask
             player.transform.position = Vector3.zero;
@@ -182,7 +196,7 @@ public class GameManager : MonoBehaviour
     {
         GameObject treePrefab = Resources.Load<GameObject>("Prefabs/Environment/Tree");
 
-        for(int i = 0; i < 20; i++)
+        for (int i = 0; i < 20; i++)
         {
             float xPos = Random.Range(-10f, 100f);
             float zPos = Random.Range(5f, 15f);
@@ -224,7 +238,7 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Equipped Mask: {mask.name}");
 
         // Update UI if needed (via UIManager)
-        if(uiManager != null) uiManager.UpdateInventoryUI();
+        if (uiManager != null) uiManager.UpdateInventoryUI();
     }
 
     public bool AddMaskToInventory(MaskData mask)
@@ -232,7 +246,7 @@ public class GameManager : MonoBehaviour
         if (inventory.Count < maxInventorySize)
         {
             inventory.Add(mask);
-            if(uiManager != null) uiManager.UpdateInventoryUI();
+            if (uiManager != null) uiManager.UpdateInventoryUI();
             return true;
         }
         return false;
@@ -246,7 +260,7 @@ public class GameManager : MonoBehaviour
         {
             EquipMask(index); // Re-equip new one
         }
-        if(uiManager != null) uiManager.UpdateInventoryUI();
+        if (uiManager != null) uiManager.UpdateInventoryUI();
     }
 
     public void RemoveMask(int index)
@@ -264,7 +278,7 @@ public class GameManager : MonoBehaviour
         {
             equippedMaskIndex--;
         }
-        if(uiManager != null) uiManager.UpdateInventoryUI();
+        if (uiManager != null) uiManager.UpdateInventoryUI();
     }
 
     public void RestartGame()
@@ -304,9 +318,9 @@ public class GameManager : MonoBehaviour
 
             if (isBoss)
             {
-                 currentState = GameState.End;
-                 uiManager.ShowGameClear();
-                 return; // Stop the loop
+                currentState = GameState.End;
+                uiManager.ShowGameClear();
+                return; // Stop the loop
             }
 
             await RewardPhase();
@@ -422,7 +436,7 @@ public class GameManager : MonoBehaviour
         // Tracking masks picked in this reward phase to avoid duplicates among the 3 options
         List<string> pickedInThisPhaseIds = new List<string>();
 
-        for(int i=0; i<3; i++)
+        for (int i = 0; i < 3; i++)
         {
             float roll = Random.Range(0f, 100f);
             RewardOption opt = new RewardOption();
@@ -486,7 +500,7 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                 Debug.Log($"Added {choice.maskData.name} to Inventory");
+                Debug.Log($"Added {choice.maskData.name} to Inventory");
             }
         }
         else
@@ -514,7 +528,7 @@ public class GameManager : MonoBehaviour
             // Apply Stat Boost Effects
             if (choice.statData != null)
             {
-                foreach(var kvp in choice.statData.effects)
+                foreach (var kvp in choice.statData.effects)
                 {
                     player.ApplyStatBoost(kvp.Key, kvp.Value);
                 }
