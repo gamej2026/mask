@@ -222,6 +222,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ParallaxLayer
   parallaxFactor: 0.1
+  damping: 0.5
   targetCamera: {fileID: 953439439}
 --- !u!1 &847096630
 GameObject:
@@ -550,6 +551,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ParallaxLayer
   parallaxFactor: 1
+  damping: 0.5
   targetCamera: {fileID: 953439439}
 --- !u!1 &1369421159
 GameObject:
@@ -681,6 +683,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ParallaxLayer
   parallaxFactor: 0.2
+  damping: 0.5
   targetCamera: {fileID: 953439439}
 --- !u!1 &1956209511 stripped
 GameObject:
@@ -700,6 +703,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ParallaxLayer
   parallaxFactor: 0.8
+  damping: 0.5
   targetCamera: {fileID: 953439439}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

@@ -39,8 +39,75 @@ public class CombatUI : MonoBehaviour
         }
 
         // 2. Stats
-        if (atkText != null) atkText.text = $"{atk:F1}";
-        if (atkCooldownText != null) atkCooldownText.text = $"{cooldown:F2} sec";
+        if (atkText != null)
+        {
+            //- `기본 공격력` [float] : 캐릭터의 기본 공격력
+            //- 플레이어 캐릭터의 경우, 장착한 가면의 기본 공격력의 값과 동일함
+            //- `공격력 효율` [float] : 캐릭터의 기본공격력 상승률
+            //- 기본값 : 100
+            //- `가면 공격력 효율 총합` [float] : 소지한 모든 가면의 `공격력 효율` 총합
+            //- `최종 공격력` [float] : 공격 시 적 캐릭터의 `체력`을 감소시키는 수치
+            //- 산출 공식: `기본 공격력` x(`공격력 효율` + `가면 공격력 효율 총합`)
+            // 예시 : atkText.text = $"10.5\t(7 x 150%)";
+            float baseAtk         = 10f;
+            float baseAtkEff      = 100f;
+            float passiveAtkEff   = 0f;
+            float permAtkEffBonus = 0f;
+
+            if (GameManager.Instance != null && GameManager.Instance.player != null)
+            {
+                Unit player = GameManager.Instance.player;
+                baseAtkEff      = player.baseAtkEff;
+                permAtkEffBonus = player.permAtkEffBonus;
+
+                if (player.equippedMask != null)
+                {
+                    baseAtk = player.equippedMask.equipAtk;
+                }
+
+                foreach (var mask in GameManager.Instance.inventory)
+                {
+                    passiveAtkEff += mask.passiveAtkEff;
+                }
+            }
+
+            float totalAtkEff = baseAtkEff + passiveAtkEff + permAtkEffBonus;
+            atkText.text = $"{atk:F1}   \t({baseAtk:F0} x {totalAtkEff:F0}%)";
+        }
+        if (atkCooldownText != null)
+        {
+            //- `공격쿨타임` [float] : 캐릭터의 기준이 되는 공격속도(플레이어 캐릭터의 경우 현재 `착용한 가면`의 `공격쿨타임`)
+            //- `공격속도 가속` [float] : 캐릭터의 기본 공격속도 가속
+            //-기본값 : 100 %
+            //- `가면 공격속도 가속 총합` [float] : 소지한 모든 가면의 `공격속도 가속` 총합
+            //- `최종 공격쿨타임` [float] : 캐릭터가 공격에 걸리는 시간(시간은 초 기반)
+            //-산출 공식: `공격쿨타임` / (`공격속도 가속` + `가면 공격속도 가속 총합`)
+            // 예시 : atkCooldownText.text = $"4 sec\t(6 sec / 150%)";
+            float baseCooldown         = 1f;
+            float baseAtkSpeedAccel    = 100f;
+            float passiveAtkSpeedAccel = 0f;
+            float permAtkSpeedBonus    = 0f;
+
+            if (GameManager.Instance != null && GameManager.Instance.player != null)
+            {
+                Unit player = GameManager.Instance.player;
+                baseAtkSpeedAccel = player.baseAtkSpeedAccel;
+                permAtkSpeedBonus = player.permAtkSpeedAccelBonus;
+
+                if (player.equippedMask != null)
+                {
+                    baseCooldown = player.equippedMask.equipInterval;
+                }
+
+                foreach (var mask in GameManager.Instance.inventory)
+                {
+                    passiveAtkSpeedAccel += mask.passiveAtkSpeedAccel;
+                }
+            }
+
+            float totalSpeedAccel = baseAtkSpeedAccel + passiveAtkSpeedAccel + permAtkSpeedBonus;
+            atkCooldownText.text = $"{cooldown:F1} sec\t({baseCooldown:F1} sec / {totalSpeedAccel:F0}%)";
+        }
         if (atkRangeText != null) atkRangeText.text = $"{range:F1}";
         if (defText != null) defText.text = $"{def * 100:F0}%";
         if (moveSpeedText != null) moveSpeedText.text = $"{speed:F1}";
