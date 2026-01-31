@@ -29,6 +29,7 @@ public class MaskData
 
     // Passive Stats (Inventory-wide)
     public float passiveHP;
+    public float passiveStamina;
     public float passiveDef;
     public float passiveSpeed; // Changed from passiveMoveSpeed to match Unit.cs
     public float passiveAtkEff;
@@ -41,6 +42,8 @@ public class MaskData
     public float equipDef;
     public float equipRange;
     public float equipKnockback;
+
+    public float staminaCost;
 
     public Color color;
     public string prefabPath;
@@ -57,6 +60,7 @@ public class UnitData
     public string id;
     public string name;
     public float hp;
+    public float maxStamina;
     public float atkEff;
     public float atkSpeedAccel;
     public float moveSpeed;
@@ -114,6 +118,8 @@ public static class GameData
             m.actionType = (ActionType)System.Enum.Parse(typeof(ActionType), row["ActionType"].ToString());
 
             m.passiveHP = float.Parse(row["PassiveHP"].ToString());
+            if (row.ContainsKey("PassiveStamina"))
+                m.passiveStamina = float.Parse(row["PassiveStamina"].ToString());
             m.passiveDef = float.Parse(row["PassiveDef"].ToString());
             m.passiveSpeed = float.Parse(row["PassiveMoveSpeed"].ToString());
             m.passiveAtkEff = float.Parse(row["PassiveAtkEff"].ToString());
@@ -125,6 +131,9 @@ public static class GameData
             m.equipDef = float.Parse(row["EquipDef"].ToString());
             m.equipRange = float.Parse(row["EquipRange"].ToString());
             m.equipKnockback = float.Parse(row["EquipKnockback"].ToString());
+
+            if (row.ContainsKey("StaminaCost"))
+                m.staminaCost = float.Parse(row["StaminaCost"].ToString());
 
             ColorUtility.TryParseHtmlString("#" + row["ColorHex"].ToString(), out m.color);
             m.color.a = 1f;
@@ -147,6 +156,8 @@ public static class GameData
             u.id = row["ID"].ToString();
             u.name = row["Name"].ToString();
             u.hp = float.Parse(row["HP"].ToString());
+            if (row.ContainsKey("MaxStamina"))
+                u.maxStamina = float.Parse(row["MaxStamina"].ToString());
             u.atkEff = float.Parse(row["AtkEff"].ToString());
             u.atkSpeedAccel = float.Parse(row["AtkSpeedAccel"].ToString());
             u.moveSpeed = float.Parse(row["MoveSpeed"].ToString());

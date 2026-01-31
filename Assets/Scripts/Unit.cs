@@ -20,16 +20,19 @@ public class Unit : MonoBehaviour
     public float baseAtkInterval;
     public float baseRange;
     public float baseKnockback;
+    public float baseMaxStamina;
 
     // Permanent Buffs (from Reward or Action Buffs)
     [Header("Permanent Buffs")]
     public float permAtkEffBonus = 0;
     public float permAtkSpeedAccelBonus = 0;
     public float permHPBonus = 0;
+    public float permStaminaBonus = 0;
 
     // Current Effective Stats (Calculated)
     [Header("Effective Stats")]
     public float maxHealth;
+    public float maxStamina;
     public float moveSpeed;
     public float finalAtkInterval;
     public float finalRange;
@@ -41,6 +44,7 @@ public class Unit : MonoBehaviour
     public UnitState state = UnitState.Idle;
 
     public float currentHealth;
+    public float currentStamina;
     private float lastAttackTime = 0f;
     private float hitDuration = 0.1f;
 
@@ -106,6 +110,7 @@ public class Unit : MonoBehaviour
             baseDef = data.def;
             baseRange = data.range;
             baseKnockback = data.knockback;
+            baseMaxStamina = data.maxStamina;
         }
 
         if (equippedIndex >= 0 && equippedIndex < inventory.Count)
@@ -117,6 +122,9 @@ public class Unit : MonoBehaviour
 
         if (currentHealth <= 0 || currentHealth > maxHealth)
             currentHealth = maxHealth;
+
+        if (currentStamina <= 0 || currentStamina > maxStamina)
+            currentStamina = maxStamina;
 
         if (rend != null && equippedMask != null)
         {
@@ -144,11 +152,13 @@ public class Unit : MonoBehaviour
         baseAtkInterval = data.atkInterval;
         baseRange = data.range;
         baseKnockback = data.knockback;
+        baseMaxStamina = data.maxStamina;
         transform.localScale = Vector3.one * data.scale;
 
         equippedMask = null;
         RecalculateStats();
         currentHealth = maxHealth;
+        currentStamina = maxStamina;
         state = UnitState.Idle;
 
         if (rend != null)
@@ -162,6 +172,7 @@ public class Unit : MonoBehaviour
     public void RecalculateStats()
     {
         float passiveHP = 0;
+        float passiveStamina = 0;
         float passiveDef = 0;
         float passiveMoveSpeed = 0;
         float passiveAtkEff = 0;
@@ -173,6 +184,7 @@ public class Unit : MonoBehaviour
             foreach (var mask in GameManager.Instance.inventory)
             {
                 passiveHP += mask.passiveHP;
+                passiveStamina += mask.passiveStamina;
                 passiveDef += mask.passiveDef;
                 passiveMoveSpeed += mask.passiveSpeed;
                 passiveAtkEff += mask.passiveAtkEff;
@@ -206,6 +218,7 @@ public class Unit : MonoBehaviour
 
         // Final Calculations based on formulas
         maxHealth = (baseMaxHealth + passiveHP + permHPBonus);
+        maxStamina = (baseMaxStamina + passiveStamina + permStaminaBonus);
         moveSpeed = (baseMoveSpeed + passiveMoveSpeed);
 
         finalAtkPower = equipAtk * (baseAtkEff + passiveAtkEff + permAtkEffBonus) / 100f;
@@ -218,6 +231,7 @@ public class Unit : MonoBehaviour
         finalKnockback = equipKnockback;
 
         if (currentHealth > maxHealth) currentHealth = maxHealth;
+        if (currentStamina > maxStamina) currentStamina = maxStamina;
     }
 
     public void ApplyMask(MaskData mask)
@@ -261,15 +275,25 @@ public class Unit : MonoBehaviour
                 case "Atk": permAtkEffBonus += effect.Value; break;
                 case "Speed": permAtkSpeedAccelBonus += effect.Value; break;
                 case "Hp": permHPBonus += effect.Value; break;
+                case "Stamina": permStaminaBonus += effect.Value; break;
             }
         }
         RecalculateStats();
         UpdateVisuals();
     }
 
+    private float staminaTimer = 0f;
     void Update()
     {
         if (state == UnitState.Die) return;
+
+        // Stamina Recovery: 1 per 5 seconds (continuous)
+        if (maxStamina > 0 && currentStamina < maxStamina)
+        {
+            currentStamina += Time.deltaTime / 5f;
+            if (currentStamina > maxStamina) currentStamina = maxStamina;
+        }
+
         if (state == UnitState.Hit) return;
 
         LogicLoop();
