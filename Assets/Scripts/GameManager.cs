@@ -27,6 +27,8 @@ public class GameManager : MonoBehaviour
     public int equippedMaskIndex = -1;
     private UnitData playerBaseData;
 
+    private System.Threading.CancellationTokenSource gameLoopCTS;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void InitializeGame()
     {
@@ -42,6 +44,11 @@ public class GameManager : MonoBehaviour
         // Re-initialize game data if needed and ensure manager exists
         GameData.Initialize();
         EnsureGameManagerExists();
+
+        if (Instance != null)
+        {
+            Instance.HandleSceneLoaded(scene.name);
+        }
     }
 
     static void EnsureGameManagerExists()
@@ -63,24 +70,74 @@ public class GameManager : MonoBehaviour
 
     void Awake()
     {
-        Instance = this;
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
     }
 
     void Start()
+    {
+        HandleSceneLoaded(SceneManager.GetActiveScene().name);
+    }
+
+    private void HandleSceneLoaded(string sceneName)
+    {
+        // Stop any existing loop
+        StopGameLoop();
+
+        if (sceneName == "Test")
+        {
+            if (uiManager != null) uiManager.ShowGameplayUI();
+            InitializeGameplay();
+        }
+        else if (sceneName == "Opening" || sceneName == "OpeningScene") // Support both common names
+        {
+            if (uiManager != null) uiManager.ShowOpeningPanel();
+        }
+    }
+
+    private void InitializeGameplay()
     {
         SetupScene();
 
         playerBaseData = GameData.GetUnit("PlayerCharacter");
 
-        // 먼저 플레이어 스탯을 초기화 (스태미나 포함)
-        player.InitializePlayer(playerBaseData, new List<MaskData>(), -1);
+        // Reset state for new game session if needed, or keep it if continuing?
+        // Typically StartGame from Opening resets state.
 
-        // Give default mask
-        MaskData defaultMask = GameData.allMasks.Count > 0 ? GameData.allMasks[0].Copy() : new MaskData();
-        AddMaskToInventory(defaultMask);
-        EquipMask(0);
+        // Ensure player is initialized
+        if (player != null)
+        {
+            player.InitializePlayer(playerBaseData, inventory, equippedMaskIndex);
 
-        GameLoop().Forget();
+            // If inventory is empty, give default mask
+            if (inventory.Count == 0)
+            {
+                MaskData defaultMask = GameData.allMasks.Count > 0 ? GameData.allMasks[0].Copy() : new MaskData();
+                AddMaskToInventory(defaultMask);
+                EquipMask(0);
+            }
+        }
+
+        gameLoopCTS = new System.Threading.CancellationTokenSource();
+        GameLoop(gameLoopCTS.Token).Forget();
+    }
+
+    private void StopGameLoop()
+    {
+        if (gameLoopCTS != null)
+        {
+            gameLoopCTS.Cancel();
+            gameLoopCTS.Dispose();
+            gameLoopCTS = null;
+        }
     }
 
     void SetupScene()
@@ -134,51 +191,61 @@ public class GameManager : MonoBehaviour
         }
 
         // Environment
-        GameObject groundPrefab = Resources.Load<GameObject>("Prefabs/Environment/Ground");
-        GameObject ground;
-        if (groundPrefab != null)
+        if (GameObject.Find("Ground") == null)
         {
-            ground = Instantiate(groundPrefab);
-            ground.name = "Ground";
-            // Ensure position/scale if prefab doesn't have it set correctly?
-            // Let's assume prefab is correct, but force position for consistency with code logic if needed.
-            // ground.transform.position = new Vector3(0, -5.5f, 0);
-        }
-        else
-        {
-            ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            ground.name = "Ground";
-            ground.transform.position = new Vector3(0, -5.5f, 0);
-            ground.transform.localScale = new Vector3(1000, 10, 10);
-            var groundRend = ground.GetComponent<Renderer>();
-            if (groundRend) groundRend.material.color = new Color(0.2f, 0.6f, 0.2f);
-        }
-
-        CreateBackgroundProps();
-
-        // UIManager
-        if (uiManager == null) // Check if assigned via Inspector (if GameManager was prefab)
-        {
-            GameObject uiPrefab = Resources.Load<GameObject>("Prefabs/Managers/UIManager");
-            if (uiPrefab != null)
+            GameObject groundPrefab = Resources.Load<GameObject>("Prefabs/Environment/Ground");
+            GameObject ground;
+            if (groundPrefab != null)
             {
-                GameObject uiObj = Instantiate(uiPrefab);
-                uiObj.name = "UIManager";
-                uiManager = uiObj.GetComponent<UIManager>();
-                if (uiManager == null) uiManager = uiObj.AddComponent<UIManager>();
+                ground = Instantiate(groundPrefab);
+                ground.name = "Ground";
             }
             else
             {
-                GameObject uiObj = new GameObject("UIManager");
-                uiManager = uiObj.AddComponent<UIManager>();
+                ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                ground.name = "Ground";
+                ground.transform.position = new Vector3(0, -5.5f, 0);
+                ground.transform.localScale = new Vector3(1000, 10, 10);
+                var groundRend = ground.GetComponent<Renderer>();
+                if (groundRend) groundRend.material.color = new Color(0.2f, 0.6f, 0.2f);
+            }
+        }
+
+        if (GameObject.Find("TreeTrunk") == null && GameObject.Find("Tree(Clone)") == null)
+        {
+            CreateBackgroundProps();
+        }
+
+        // UIManager - should already exist due to persistence or static init
+        if (uiManager == null)
+        {
+            uiManager = FindFirstObjectByType<UIManager>();
+            if (uiManager == null)
+            {
+                GameObject uiPrefab = Resources.Load<GameObject>("Prefabs/Managers/UIManager");
+                if (uiPrefab != null)
+                {
+                    GameObject uiObj = Instantiate(uiPrefab);
+                    uiObj.name = "UIManager";
+                    uiManager = uiObj.GetComponent<UIManager>();
+                }
+                else
+                {
+                    GameObject uiObj = new GameObject("UIManager");
+                    uiManager = uiObj.AddComponent<UIManager>();
+                }
             }
         }
 
         // Create Player
-        if (player == null) // Check if assigned via Inspector
+        GameObject pObj = GameObject.Find("Player");
+        if (pObj != null)
+        {
+            player = pObj.GetComponent<Unit>();
+        }
+        else
         {
             GameObject pPrefab = Resources.Load<GameObject>("Prefabs/Units/Player");
-            GameObject pObj;
             if (pPrefab != null)
             {
                 pObj = Instantiate(pPrefab);
@@ -192,8 +259,6 @@ public class GameManager : MonoBehaviour
 
             player = pObj.GetComponent<Unit>();
             if (player == null) player = pObj.AddComponent<Unit>();
-
-            // Initialize will be called after equipping mask
             player.transform.position = Vector3.zero;
         }
     }
@@ -297,54 +362,90 @@ public class GameManager : MonoBehaviour
 
     public void RestartGame()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        // When restarting, we might want to reset stage count but keep inventory?
+        // Or full reset? The prompt says "Game Clear is same as Game Over... but different illustration".
+        // Usually restart means restart from stage 1.
+        stageCount = 1;
+        SceneManager.LoadScene("Test");
+    }
+
+    public void StartGame()
+    {
+        // Reset full state for a fresh game
+        stageCount = 1;
+        inventory.Clear();
+        equippedMaskIndex = -1;
+        SceneManager.LoadScene("Test");
+    }
+
+    public void GoToMain()
+    {
+        StopGameLoop();
+        SceneManager.LoadScene("Opening");
+    }
+
+    public void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 
     // --- Game Loop ---
 
-    async UniTaskVoid GameLoop()
+    async UniTaskVoid GameLoop(System.Threading.CancellationToken token)
     {
-        while (true)
+        while (!token.IsCancellationRequested)
         {
-            await MovePhase();
-
-            // Check Stage Data
-            StageData stageData = GameData.GetStage(stageCount);
-            if (stageData == null)
+            try
             {
-                // No more stages?
-                Debug.Log("No more stages defined.");
-                currentState = GameState.End;
-                uiManager.ShowGameClear();
-                return; // Stop the loop
+                await MovePhase().AttachExternalCancellation(token);
+
+                // Check Stage Data
+                StageData stageData = GameData.GetStage(stageCount);
+                if (stageData == null)
+                {
+                    // No more stages?
+                    Debug.Log("No more stages defined.");
+                    currentState = GameState.End;
+                    uiManager.ShowGameClear();
+                    return; // Stop the loop
+                }
+
+                bool isBoss = (stageCount == 4); // Hardcoded for now based on prompt, or check StageData
+                await BattlePhase(stageData).AttachExternalCancellation(token);
+
+                if (player.currentHealth <= 0)
+                {
+                    Debug.Log("Game Over");
+                    currentState = GameState.End;
+                    uiManager.ShowGameOver();
+                    return; // Stop the loop
+                }
+
+                if (isBoss)
+                {
+                    currentState = GameState.End;
+                    uiManager.ShowGameClear();
+                    return; // Stop the loop
+                }
+
+                // Spawn Reward Box at last enemy position
+                if (enemy != null)
+                {
+                    await WaitForBoxClick(enemy.transform.position).AttachExternalCancellation(token);
+                }
+
+                await RewardPhase().AttachExternalCancellation(token);
+                stageCount++;
             }
-
-            bool isBoss = (stageCount == 4); // Hardcoded for now based on prompt, or check StageData
-            await BattlePhase(stageData);
-
-            if (player.currentHealth <= 0)
+            catch (System.OperationCanceledException)
             {
-                Debug.Log("Game Over");
-                currentState = GameState.End;
-                uiManager.ShowGameOver();
-                return; // Stop the loop
+                Debug.Log("GameLoop Canceled");
+                return;
             }
-
-            if (isBoss)
-            {
-                currentState = GameState.End;
-                uiManager.ShowGameClear();
-                return; // Stop the loop
-            }
-
-            // Spawn Reward Box at last enemy position
-            if (enemy != null)
-            {
-                await WaitForBoxClick(enemy.transform.position);
-            }
-
-            await RewardPhase();
-            stageCount++;
         }
     }
 
