@@ -127,6 +127,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1017386125299672216, guid: 1d11efca4ed62e147b82cd4b32f18128, type: 3}
+      propertyPath: m_Color.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3268348257972178875, guid: 1d11efca4ed62e147b82cd4b32f18128, type: 3}
+      propertyPath: m_Color.a
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3809527724374906147, guid: 1d11efca4ed62e147b82cd4b32f18128, type: 3}
       propertyPath: m_Name
       value: BGLayerController
@@ -170,6 +178,14 @@ PrefabInstance:
     - target: {fileID: 7311885916775847156, guid: 1d11efca4ed62e147b82cd4b32f18128, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8051316489602969865, guid: 1d11efca4ed62e147b82cd4b32f18128, type: 3}
+      propertyPath: m_Color.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8381808059716760576, guid: 1d11efca4ed62e147b82cd4b32f18128, type: 3}
+      propertyPath: m_Color.a
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -364,7 +380,7 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 0
+  orthographic: 1
   orthographic size: 5
   m_Depth: -1
   m_CullingMask:

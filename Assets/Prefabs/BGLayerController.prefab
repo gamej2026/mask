@@ -233,6 +233,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Sky
       objectReference: {fileID: 0}
+    - target: {fileID: 2321403129507232807, guid: 75e12260bcafecc4e914f11e7d7528bd, type: 3}
+      propertyPath: m_Color.a
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2363100533974197690, guid: 75e12260bcafecc4e914f11e7d7528bd, type: 3}
       propertyPath: m_LocalPosition.x
       value: 5.23
