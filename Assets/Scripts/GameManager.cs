@@ -421,8 +421,14 @@ public class GameManager : MonoBehaviour
             Vector3 spawnPos = new Vector3(camPos.x + screenWidth / 2f + 2f, 0, 0);
 
             GameObject eObj;
-            // Try specific monster prefab first
-            GameObject monPrefab = Resources.Load<GameObject>($"Prefabs/Units/{monId}");
+            // Try specific monster prefab from Data path, fallback to old logic
+            GameObject monPrefab = null;
+            if (!string.IsNullOrEmpty(uData.prefabPath))
+            {
+                monPrefab = Resources.Load<GameObject>(uData.prefabPath);
+            }
+
+            if (monPrefab == null) monPrefab = Resources.Load<GameObject>($"Prefabs/Units/{monId}");
             if (monPrefab == null) monPrefab = Resources.Load<GameObject>("Prefabs/Units/Monster");
 
             if (monPrefab != null)

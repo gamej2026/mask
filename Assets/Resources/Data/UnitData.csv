@@ -1,5 +1,10 @@
-ID,Name,HP,AtkEff,AtkSpeedAccel,MoveSpeed,Def,AtkInterval,Range,Knockback,Scale,ColorHex
-PlayerCharacter,Player,100,100,100,2,0,1,1.5,1,1,FFFFFF
-Slime,Green Slime,50,10,100,1,0,2,1,0.5,0.8,00FF00
-Bat,Vampire Bat,30,15,120,3,0,1,1,0.2,0.6,333333
-Boss,Demon King,500,50,80,0.5,20,3,5,2,2.5,FF0000
+ID,Name,HP,AtkEff,AtkSpeedAccel,MoveSpeed,Def,AtkInterval,Range,Knockback,Scale,ColorHex,PrefabPath
+PlayerCharacter,Player,100,100,100,2,0,1,1.5,1,1,FFFFFF,Prefabs/Units/Player
+Slime,Green Slime,50,10,100,1,0,2,1,0.5,0.8,00FF00,Prefabs/Units/Slime
+Bat,Vampire Bat,30,15,120,3,0,1,1,0.2,0.6,333333,Prefabs/Units/Bat
+Boss,Demon King,500,50,80,0.5,20,3,5,2,2.5,FF0000,Prefabs/Units/Boss
+mon_slime,Green Slime,50,10,100,1,0,2,1,0.5,0.8,00FF00,Prefabs/Units/mon_slime
+mon_bat,Vampire Bat,30,15,120,3,0,1,1,0.2,0.6,333333,Prefabs/Units/mon_bat
+mon_orc,Orc,80,20,90,1.5,5,1.5,1.2,1,1.2,006400,Prefabs/Units/mon_orc
+mon_golem,Golem,150,30,50,0.8,15,3,1.5,2,1.5,808080,Prefabs/Units/mon_golem
+mon_dragon,Demon King,500,50,80,0.5,20,3,5,2,2.5,FF0000,Prefabs/Units/mon_dragon

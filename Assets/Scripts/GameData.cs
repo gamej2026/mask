@@ -43,6 +43,7 @@ public class MaskData
     public float equipKnockback;
 
     public Color color;
+    public string prefabPath;
 
     public MaskData Copy()
     {
@@ -65,6 +66,7 @@ public class UnitData
     public float knockback;
     public float scale;
     public Color color;
+    public string prefabPath;
 }
 
 [System.Serializable]
@@ -127,6 +129,9 @@ public static class GameData
             ColorUtility.TryParseHtmlString("#" + row["ColorHex"].ToString(), out m.color);
             m.color.a = 1f;
 
+            if (row.ContainsKey("PrefabPath"))
+                m.prefabPath = row["PrefabPath"].ToString();
+
             allMasks.Add(m);
         }
     }
@@ -153,6 +158,9 @@ public static class GameData
 
             ColorUtility.TryParseHtmlString("#" + row["ColorHex"].ToString(), out u.color);
             u.color.a = 1f;
+
+            if (row.ContainsKey("PrefabPath"))
+                u.prefabPath = row["PrefabPath"].ToString();
 
             allUnits.Add(u);
         }
