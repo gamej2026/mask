@@ -318,7 +318,7 @@ public class GameManager : MonoBehaviour
 
             await MovePhase();
 
-            bool isBoss = (stageCount == 4); // Hardcoded for now based on prompt, or check StageData
+            bool isBoss = (stageCount == 10); // Hardcoded for now based on prompt, or check StageData
             await BattlePhase(stageData);
 
             if (player.currentHealth <= 0)
