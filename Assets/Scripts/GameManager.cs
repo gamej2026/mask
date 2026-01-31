@@ -172,7 +172,7 @@ public class GameManager : MonoBehaviour
             if (player == null) player = pObj.AddComponent<Unit>();
 
             // Initialize will be called after equipping mask
-            player.transform.position = Vector3.zero;
+            player.transform.position = new Vector3(0, GameOption.Instance.spawnHeight, 0);
         }
     }
 
@@ -389,7 +389,7 @@ public class GameManager : MonoBehaviour
             float screenHeight = mainCam.orthographicSize * 2f;
             float screenWidth = screenHeight * mainCam.aspect;
             Vector3 camPos = mainCam.transform.position;
-            Vector3 spawnPos = new Vector3(camPos.x + screenWidth / 2f + 2f, 0, 0);
+            Vector3 spawnPos = new Vector3(camPos.x + screenWidth / 2f + 2f, GameOption.Instance.spawnHeight, 0);
 
             GameObject eObj;
             // Try specific monster prefab from Data path, fallback to old logic
