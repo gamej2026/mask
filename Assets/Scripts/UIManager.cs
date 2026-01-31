@@ -16,6 +16,9 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject inventoryPanel;
     private List<Image> inventorySlots = new List<Image>();
     private List<GameObject> inventoryHighlights = new List<GameObject>();
+    private List<TextMeshProUGUI> slotHotkeys = new List<TextMeshProUGUI>();
+    private List<TextMeshProUGUI> slotCosts = new List<TextMeshProUGUI>();
+    private List<Image> slotBackgrounds = new List<Image>();
 
     // Replacement UI
     [SerializeField] private GameObject replacePanel;
@@ -27,6 +30,7 @@ public class UIManager : MonoBehaviour
 
     // Player Stats HUD
     private TextMeshProUGUI hpText;
+    private TextMeshProUGUI staminaText;
     private TextMeshProUGUI atkSpeedText;
 
     // Detail UI
@@ -120,30 +124,37 @@ public class UIManager : MonoBehaviour
         foreach (Transform child in inventoryPanel.transform) Destroy(child.gameObject);
         inventorySlots.Clear();
         inventoryHighlights.Clear();
+        slotHotkeys.Clear();
+        slotCosts.Clear();
+        slotBackgrounds.Clear();
 
         GameObject slotPrefab = Resources.Load<GameObject>("Prefabs/UI/InventorySlot");
+        string[] hotkeys = { "Q", "W", "E", "R" };
 
         for (int i = 0; i < 4; i++)
         {
             int index = i;
             GameObject slot;
 
+            Image bg;
             if (slotPrefab != null)
             {
                 slot = Instantiate(slotPrefab, inventoryPanel.transform, false);
                 slot.name = $"Slot_{i}";
+                bg = slot.GetComponent<Image>();
             }
             else
             {
                 slot = new GameObject($"Slot_{i}");
                 slot.transform.SetParent(inventoryPanel.transform, false);
 
-                Image bg = slot.AddComponent<Image>();
+                bg = slot.AddComponent<Image>();
                 bg.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
 
                 RectTransform slotRect = slot.GetComponent<RectTransform>();
                 slotRect.sizeDelta = new Vector2(100, 100);
             }
+            slotBackgrounds.Add(bg);
 
             // Add Handler
             var handler = slot.GetComponent<InventorySlotHandler>();
@@ -185,6 +196,19 @@ public class UIManager : MonoBehaviour
             }
             highlightObj.SetActive(false);
             inventoryHighlights.Add(highlightObj);
+
+            // Setup Hotkey Text (Top-Left)
+            TextMeshProUGUI hotkeyTxt = CreateText(slot.transform, "Hotkey", hotkeys[i], 20, new Vector2(-35, 35));
+            hotkeyTxt.rectTransform.sizeDelta = new Vector2(30, 30);
+            hotkeyTxt.alignment = TextAlignmentOptions.TopLeft;
+            slotHotkeys.Add(hotkeyTxt);
+
+            // Setup Cost Text (Bottom-Right)
+            TextMeshProUGUI costTxt = CreateText(slot.transform, "Cost", "0", 20, new Vector2(35, -35));
+            costTxt.rectTransform.sizeDelta = new Vector2(30, 30);
+            costTxt.alignment = TextAlignmentOptions.BottomRight;
+            costTxt.color = Color.yellow;
+            slotCosts.Add(costTxt);
         }
     }
 
@@ -192,18 +216,44 @@ public class UIManager : MonoBehaviour
     {
         var inv = GameManager.Instance.inventory;
         int equipped = GameManager.Instance.equippedMaskIndex;
+        float currentStamina = GameManager.Instance.player != null ? GameManager.Instance.player.currentStamina : 0;
 
         for (int i = 0; i < 4; i++)
         {
             if (i < inv.Count)
             {
-                inventorySlots[i].color = inv[i].color;
+                var mask = inv[i];
+                inventorySlots[i].color = mask.color;
                 inventorySlots[i].gameObject.SetActive(true);
+                slotCosts[i].text = mask.staminaCost.ToString();
+                slotCosts[i].gameObject.SetActive(true);
+                slotHotkeys[i].gameObject.SetActive(true);
+
+                // Darken if insufficient stamina
+                bool canEquip = currentStamina >= mask.staminaCost || i == equipped;
+                Color baseSlotColor = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+                Color darkenedSlotColor = new Color(0.05f, 0.05f, 0.05f, 0.9f);
+                Color iconColor = mask.color;
+
+                if (!canEquip)
+                {
+                    slotBackgrounds[i].color = darkenedSlotColor;
+                    iconColor.r *= 0.3f; iconColor.g *= 0.3f; iconColor.b *= 0.3f;
+                    inventorySlots[i].color = iconColor;
+                }
+                else
+                {
+                    slotBackgrounds[i].color = baseSlotColor;
+                    inventorySlots[i].color = mask.color;
+                }
             }
             else
             {
                 inventorySlots[i].color = Color.clear;
                 inventorySlots[i].gameObject.SetActive(false);
+                slotCosts[i].gameObject.SetActive(false);
+                slotHotkeys[i].gameObject.SetActive(false);
+                slotBackgrounds[i].color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
             }
 
             inventoryHighlights[i].SetActive(i == equipped && i < inv.Count);
@@ -221,18 +271,24 @@ public class UIManager : MonoBehaviour
         rect.anchorMax = new Vector2(0, 1);
         rect.pivot = new Vector2(0, 1);
         rect.anchoredPosition = new Vector2(50, -50);
-        rect.sizeDelta = new Vector2(400, 150);
+        rect.sizeDelta = new Vector2(400, 200);
 
         hpText = CreateText(statsObj.transform, "HPText", "HP: 0/0", 30, new Vector2(100, 0));
         hpText.alignment = TextAlignmentOptions.Left;
+        hpText.color = Color.red;
 
-        atkSpeedText = CreateText(statsObj.transform, "AtkSpeedText", "Atk Interval: 0", 30, new Vector2(100, -50));
+        staminaText = CreateText(statsObj.transform, "StaminaText", "ST: 0/0", 30, new Vector2(100, -40));
+        staminaText.alignment = TextAlignmentOptions.Left;
+        staminaText.color = Color.yellow;
+
+        atkSpeedText = CreateText(statsObj.transform, "AtkSpeedText", "Atk Interval: 0", 30, new Vector2(100, -80));
         atkSpeedText.alignment = TextAlignmentOptions.Left;
     }
 
-    public void UpdatePlayerStatsUI(float currentHP, float maxHP, float atkInterval)
+    public void UpdatePlayerStatsUI(float currentHP, float maxHP, float currentST, float maxST, float atkInterval)
     {
         if (hpText != null) hpText.text = $"HP: {Mathf.Ceil(currentHP)} / {Mathf.Ceil(maxHP)}";
+        if (staminaText != null) staminaText.text = $"ST: {Mathf.Floor(currentST)} / {Mathf.Ceil(maxST)}";
         if (atkSpeedText != null) atkSpeedText.text = $"Atk Interval: {atkInterval:F2}s";
     }
 

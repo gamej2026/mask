@@ -233,11 +233,20 @@ public class GameManager : MonoBehaviour
     public void EquipMask(int index)
     {
         if (index < 0 || index >= inventory.Count) return;
+        if (equippedMaskIndex == index) return; // Already equipped
 
+        MaskData targetMask = inventory[index];
+        if (player.currentStamina < targetMask.staminaCost)
+        {
+            Debug.Log($"Not enough stamina to equip {targetMask.name}");
+            return;
+        }
+
+        player.currentStamina -= targetMask.staminaCost;
         equippedMaskIndex = index;
         player.InitializePlayer(playerBaseData, inventory, equippedMaskIndex);
 
-        Debug.Log($"Equipped Mask: {inventory[index].name}");
+        Debug.Log($"Equipped Mask: {targetMask.name}. Remaining Stamina: {player.currentStamina}");
 
         // Update UI if needed (via UIManager)
         if (uiManager != null) uiManager.UpdateInventoryUI();
@@ -601,7 +610,7 @@ public class GameManager : MonoBehaviour
         // Update Player Stats UI
         if (player != null && uiManager != null)
         {
-            uiManager.UpdatePlayerStatsUI(player.currentHealth, player.maxHealth, player.finalAtkInterval);
+            uiManager.UpdatePlayerStatsUI(player.currentHealth, player.maxHealth, player.currentStamina, player.maxStamina, player.finalAtkInterval);
         }
     }
 }
