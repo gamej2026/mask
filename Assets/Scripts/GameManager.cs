@@ -461,7 +461,8 @@ public class GameManager : MonoBehaviour
         float startX = player.transform.position.x;
         float targetX = startX + totalDist;
 
-        await player.transform.DOMoveX(targetX, duration).SetEase(Ease.Linear).ToUniTask(cancellationToken: token);
+        await player.transform.DOMoveX(targetX, duration).SetEase(Ease.Linear).AsyncWaitForCompletion();
+
 
         player.isMovingScenario = false;
         player.state = UnitState.Idle;

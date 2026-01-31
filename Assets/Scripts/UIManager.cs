@@ -203,7 +203,11 @@ public class UIManager : MonoBehaviour
 
     public void ShowOpeningUI(bool show)
     {
-        if (openingPanel != null) openingPanel.SetActive(show);
+        if (openingPanel != null)
+        {
+            SoundManager.Instance.PlayBGM("Clockwork Atrium"); // 게임 시작 BGM
+            openingPanel.SetActive(show);
+        }
     }
 
     public void SetGameplayUIActive(bool active)
