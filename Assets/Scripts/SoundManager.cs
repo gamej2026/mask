@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using DG.Tweening;
 using System.Collections.Generic;
 
@@ -104,10 +104,10 @@ public class SoundManager : MonoBehaviour
     {
         if (currentBgmName == audioName) return;
 
-        AudioClip clip = Resources.Load<AudioClip>($"Audio/{audioName}");
+        AudioClip clip = Resources.Load<AudioClip>($"BGM/{audioName}");
         if (clip == null)
         {
-            Debug.LogWarning($"BGM Clip not found: Audio/{audioName}");
+            Debug.LogWarning($"BGM Clip not found: BGM/{audioName}");
             return;
         }
 

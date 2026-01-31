@@ -1,5 +1,5 @@
-StageID,MonsterIDList
-1,Mon_Slime;Mon_Slime;Mon_Zombie
-2,Mon_Slime;Mon_Zombie;Mon_Zombie
-3,Mon_Zombie;Mon_Zombie;Mon_MachineCreature
-4,Mon_Zombie;Mon_MachineCreature;Mon_SkullEngine
+StageID,MonsterIDList,BGM
+1,Mon_Slime;Mon_Slime;Mon_Zombie,Clockwork First Clash
+2,Mon_Slime;Mon_Zombie;Mon_Zombie,Clockwork First
+3,Mon_Zombie;Mon_Zombie;Mon_MachineCreature,Clockwork Last Stand
+4,Mon_Zombie;Mon_MachineCreature;Mon_SkullEngine,Clockwork Skies_ Battle Theme

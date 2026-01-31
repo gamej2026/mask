@@ -81,6 +81,7 @@ public class StageData
 {
     public int stageId;
     public List<string> monsterIds = new List<string>();
+    public string bgm;
 }
 
 [System.Serializable]
@@ -199,6 +200,10 @@ public static class GameData
             s.stageId = int.Parse(row["StageID"].ToString());
             string listStr = row["MonsterIDList"].ToString();
             s.monsterIds = listStr.Split(';').ToList();
+            
+            if (row.ContainsKey("BGM"))
+                s.bgm = row["BGM"].ToString();
+            
             allStages.Add(s);
         }
     }

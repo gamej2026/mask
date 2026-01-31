@@ -604,6 +604,7 @@ public class UIManager : MonoBehaviour
     {
         if (gameClearPanel)
         {
+            SoundManager.Instance.PlayBGM("game win music"); // 게임 클리어 브금
             gameClearPanel.SetActive(true);
             gameClearPanel.transform.SetAsLastSibling();
         }

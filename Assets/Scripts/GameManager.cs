@@ -288,8 +288,6 @@ public class GameManager : MonoBehaviour
     {
         while (true)
         {
-            await MovePhase();
-
             // Check Stage Data
             StageData stageData = GameData.GetStage(stageCount);
             if (stageData == null)
@@ -300,6 +298,14 @@ public class GameManager : MonoBehaviour
                 uiManager.ShowGameClear();
                 return; // Stop the loop
             }
+
+            // 스테이지 BGM 재생
+            if (!string.IsNullOrEmpty(stageData.bgm) && SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlayBGM(stageData.bgm);
+            }
+
+            await MovePhase();
 
             bool isBoss = (stageCount == 4); // Hardcoded for now based on prompt, or check StageData
             await BattlePhase(stageData);
@@ -406,6 +412,7 @@ public class GameManager : MonoBehaviour
     {
         currentState = GameState.Battle;
         Debug.Log($"Starting Battle Phase (Stage {stageCount})");
+        
         SoundManager.Instance.PlaySFX("monster encounter sound"); // 몬스터 조우 시 효과음
         foreach (string monId in stageData.monsterIds)
         {
