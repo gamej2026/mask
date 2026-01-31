@@ -618,7 +618,7 @@ public class GameManager : MonoBehaviour
         // Update Player Stats UI
         if (player != null && uiManager != null)
         {
-            uiManager.UpdatePlayerStatsUI(player.currentHealth, player.maxHealth, player.currentStamina, player.maxStamina, player.finalAtkInterval);
+            uiManager.UpdatePlayerStatsUI();
         }
     }
 }

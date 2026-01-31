@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
@@ -51,7 +51,7 @@ public class Unit : MonoBehaviour
     public Unit target;
     public bool isMovingScenario = false;
 
-    private TextMeshPro healthText;
+    private UnitHUD unitHUD;
     private Renderer rend;
     private Color originalColor;
     private GameObject currentMaskObject;
@@ -63,33 +63,18 @@ public class Unit : MonoBehaviour
     void Awake()
     {
         rend = GetComponent<Renderer>();
-        CreateHealthText();
+        CreateUnitHUD();
     }
 
-    void CreateHealthText()
+    void CreateUnitHUD()
     {
-        GameObject prefab = Resources.Load<GameObject>("Prefabs/UI/HealthText");
-        GameObject textObj;
+        GameObject prefab = Resources.Load<GameObject>("Prefabs/UI/UnitHUD");
         if (prefab != null)
         {
-            textObj = Instantiate(prefab, transform);
-            textObj.name = "HealthText";
-            textObj.transform.localPosition = Vector3.up * 1.5f;
-        }
-        else
-        {
-            textObj = new GameObject("HealthText");
-            textObj.transform.SetParent(transform);
-            textObj.transform.localPosition = Vector3.up * 1.5f;
-        }
-
-        healthText = textObj.GetComponent<TextMeshPro>();
-        if (healthText == null)
-        {
-            healthText = textObj.AddComponent<TextMeshPro>();
-            healthText.fontSize = 5;
-            healthText.alignment = TextAlignmentOptions.Center;
-            healthText.color = Color.white;
+            GameObject hudObj = Instantiate(prefab, transform);
+            hudObj.name = "UnitHUD";
+            hudObj.transform.localPosition = Vector3.up * 2f; // Position above unit
+            unitHUD = hudObj.GetComponent<UnitHUD>();
         }
     }
 
@@ -310,12 +295,26 @@ public class Unit : MonoBehaviour
         UpdateVisuals();
     }
 
-    private float staminaTimer = 0f;
     void Update()
     {
         if (state == UnitState.Die) return;
 
-        // Stamina Recovery: 1 per 5 seconds (continuous)
+        // Update HUD
+        if (unitHUD != null)
+        {
+            float hpPercent = (maxHealth > 0) ? currentHealth / maxHealth : 0;
+
+            float atkProgress = 1f;
+            if (finalAtkInterval > 0)
+            {
+                float timeSinceAttack = Time.time - lastAttackTime;
+                atkProgress = Mathf.Clamp01(timeSinceAttack / finalAtkInterval);
+            }
+
+            unitHUD.UpdateStatus(hpPercent, atkProgress);
+        }
+
+        // Stamina Recovery
         if (maxStamina > 0 && currentStamina < maxStamina)
         {
             currentStamina += Time.deltaTime / 5f;
@@ -374,7 +373,6 @@ public class Unit : MonoBehaviour
 
         if (team == Team.Player)
         {
-            // Execute based on ActionType
             ActionType action = equippedMask != null ? equippedMask.actionType : ActionType.Attack;
 
             switch (action)
@@ -404,7 +402,6 @@ public class Unit : MonoBehaviour
         }
         else
         {
-            // Enemies always attack with projectile as per new spec
             SpawnProjectile();
         }
 
@@ -431,7 +428,6 @@ public class Unit : MonoBehaviour
             projObj.transform.localScale = Vector3.one * 0.3f;
         }
 
-        // Color
         var r = projObj.GetComponent<Renderer>();
         if (r) r.material.color = originalColor;
 
@@ -453,7 +449,6 @@ public class Unit : MonoBehaviour
     {
         if (state == UnitState.Die) return;
 
-        // Formula: damage * (1 - defense)
         float reducedDamage = damage * (1f - finalDef);
         currentHealth -= reducedDamage;
         UpdateVisuals();
@@ -528,7 +523,6 @@ public class Unit : MonoBehaviour
 
     public void UpdateVisuals()
     {
-        if(healthText != null)
-            healthText.text = $"{Mathf.Ceil(currentHealth)}/{Mathf.Ceil(maxHealth)}";
+        // Removed Health Text update as UnitHUD handles it in Update loop
     }
 }
