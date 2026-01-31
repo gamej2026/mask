@@ -159,6 +159,7 @@ MonoBehaviour:
   target: {fileID: 0}
   isMovingScenario: 0
   bodyOffset: {x: 0, y: 0.5, z: -1}
+  maskPosTransform: {fileID: 0}
   equippedMask:
     id: 
     name: 
@@ -300,6 +301,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 65702495048144492, guid: 32ce83dd13380ff418fc0a869558c4bb, type: 3}
+    - {fileID: -8700617353114198275, guid: 32ce83dd13380ff418fc0a869558c4bb, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 974866128322438824, guid: 32ce83dd13380ff418fc0a869558c4bb, type: 3}
