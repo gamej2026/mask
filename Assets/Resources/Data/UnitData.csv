@@ -1,0 +1,5 @@
+ID,Name,HP,AtkEff,AtkSpeedAccel,MoveSpeed,Def,AtkInterval,Range,Knockback,Scale,ColorHex
+PlayerCharacter,Player,100,100,100,2,0,1,1.5,1,1,FFFFFF
+Slime,Green Slime,50,10,100,1,0,2,1,0.5,0.8,00FF00
+Bat,Vampire Bat,30,15,120,3,0,1,1,0.2,0.6,333333
+Boss,Demon King,500,50,80,0.5,20,3,5,2,2.5,FF0000
