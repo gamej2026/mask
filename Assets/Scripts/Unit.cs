@@ -60,6 +60,8 @@ public class Unit : MonoBehaviour
     // Active Mask
     public MaskData equippedMask;
 
+    private Animator anim;
+
     void Awake()
     {
         rend = GetComponent<Renderer>();
@@ -157,6 +159,7 @@ public class Unit : MonoBehaviour
 
     public void InitializeMonster(UnitData data)
     {
+        anim = GetComponentInChildren<Animator>();
         team = Team.Enemy;
         baseMaxHealth = data.hp;
         baseAtkEff = data.atkEff;
@@ -290,6 +293,11 @@ public class Unit : MonoBehaviour
                 }
             }
         }
+
+        if (currentMaskObject != null)
+            anim = currentMaskObject.GetComponent<Animator>();
+        else
+            anim = GetComponentInChildren<Animator>();
     }
 
     public void ApplyStatReward(StatRewardData reward)
@@ -310,6 +318,11 @@ public class Unit : MonoBehaviour
 
     void Update()
     {
+        if (anim != null)
+        {
+            anim.SetBool("IsMove", state == UnitState.Move);
+        }
+
         if (state == UnitState.Die) return;
 
         // Update HUD
@@ -382,6 +395,8 @@ public class Unit : MonoBehaviour
 
     async UniTaskVoid AttackRoutine()
     {
+        if (anim != null) anim.SetTrigger("Attack");
+
         lastAttackTime = Time.time;
 
         if (team == Team.Player)
@@ -491,6 +506,7 @@ public class Unit : MonoBehaviour
     async UniTaskVoid HitRoutine(float distance)
     {
         state = UnitState.Hit;
+        if (anim != null) anim.SetTrigger("Damaged");
 
         Vector3 knockDir = (team == Team.Player) ? Vector3.left : Vector3.right;
         transform.DOMove(transform.position + knockDir * distance, hitDuration).SetEase(Ease.OutQuad);
@@ -509,6 +525,8 @@ public class Unit : MonoBehaviour
     void Die()
     {
         state = UnitState.Die;
+        if (anim != null) anim.SetBool("isDead", true);
+
         if (rend) rend.material.DOFade(0, 0.5f).OnComplete(() => gameObject.SetActive(false));
         else gameObject.SetActive(false);
     }
