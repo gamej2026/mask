@@ -135,25 +135,6 @@ public class GameManager : MonoBehaviour
         }
 
         // Environment
-        GameObject groundPrefab = Resources.Load<GameObject>("Prefabs/Environment/Ground");
-        GameObject ground;
-        if (groundPrefab != null)
-        {
-            ground = Instantiate(groundPrefab);
-            ground.name = "Ground";
-            // Ensure position/scale if prefab doesn't have it set correctly?
-            // Let's assume prefab is correct, but force position for consistency with code logic if needed.
-            // ground.transform.position = new Vector3(0, -5.5f, 0);
-        }
-        else
-        {
-            ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            ground.name = "Ground";
-            ground.transform.position = new Vector3(0, -5.5f, 0);
-            ground.transform.localScale = new Vector3(1000, 10, 10);
-            var groundRend = ground.GetComponent<Renderer>();
-            if (groundRend) groundRend.material.color = new Color(0.2f, 0.6f, 0.2f);
-        }
 
         CreateBackgroundProps();
 
