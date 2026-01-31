@@ -21,6 +21,10 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject replacePanel;
     private Transform replaceContainer;
 
+    // End Game UI
+    [SerializeField] private GameObject gameOverPanel;
+    [SerializeField] private GameObject gameClearPanel;
+
     // Detail UI
     [SerializeField] private GameObject detailPanel;
     private TextMeshProUGUI detailName;
@@ -36,6 +40,8 @@ public class UIManager : MonoBehaviour
         SetupRewardPanel();
         SetupReplacePanel();
         SetupDetailPanel();
+        SetupGameOverPanel();
+        SetupGameClearPanel();
     }
 
     void SetupCanvas()
@@ -477,6 +483,45 @@ public class UIManager : MonoBehaviour
         return selectedReplaceIndex;
     }
 
+    // --- End Game Panels ---
+
+    void SetupGameOverPanel()
+    {
+        if (gameOverPanel == null)
+        {
+            gameOverPanel = CreatePanel(mainCanvas.transform, "GameOverPanel", new Color(0.5f, 0, 0, 0.8f));
+            CreateText(gameOverPanel.transform, "Title", "GAME OVER", 80, new Vector2(0, 100));
+
+            Button restartBtn = CreateButton(gameOverPanel.transform, "RestartBtn", "RESTART", new Vector2(0, -100));
+            restartBtn.onClick.AddListener(() => GameManager.Instance.RestartGame());
+        }
+        gameOverPanel.SetActive(false);
+    }
+
+    void SetupGameClearPanel()
+    {
+        if (gameClearPanel == null)
+        {
+            gameClearPanel = CreatePanel(mainCanvas.transform, "GameClearPanel", new Color(0, 0.5f, 0, 0.8f));
+            CreateText(gameClearPanel.transform, "Title", "GAME CLEAR!", 80, new Vector2(0, 100));
+
+            Button restartBtn = CreateButton(gameClearPanel.transform, "RestartBtn", "PLAY AGAIN", new Vector2(0, -100));
+            restartBtn.onClick.AddListener(() => GameManager.Instance.RestartGame());
+        }
+        gameClearPanel.SetActive(false);
+    }
+
+    public void ShowGameOver()
+    {
+        gameOverPanel.SetActive(true);
+        gameOverPanel.transform.SetAsLastSibling();
+    }
+
+    public void ShowGameClear()
+    {
+        gameClearPanel.SetActive(true);
+        gameClearPanel.transform.SetAsLastSibling();
+    }
 
     // --- Helpers ---
 

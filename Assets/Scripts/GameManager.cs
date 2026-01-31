@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
@@ -12,7 +13,6 @@ public class GameManager : MonoBehaviour
     private Unit enemy;
     private Camera mainCam;
     public UIManager uiManager;
-    private TextMeshPro gameClearText;
 
     // States
     public enum GameState { Move, Battle, Reward, End }
@@ -176,34 +176,6 @@ public class GameManager : MonoBehaviour
             // Initialize will be called after equipping mask
             player.transform.position = Vector3.zero;
         }
-
-        // Game Clear Text
-        if (gameClearText == null)
-        {
-            // Try load prefab
-            GameObject gcPrefab = Resources.Load<GameObject>("Prefabs/UI/GameClearText");
-            if (gcPrefab != null)
-            {
-                 GameObject gcObj = Instantiate(gcPrefab, mainCam.transform);
-                 gcObj.name = "GameClearText";
-                 gcObj.transform.localPosition = new Vector3(0, 0, 10);
-                 gameClearText = gcObj.GetComponent<TextMeshPro>();
-                 if(gameClearText == null) gameClearText = gcObj.AddComponent<TextMeshPro>();
-                 gcObj.SetActive(false);
-            }
-            else
-            {
-                GameObject gcObj = new GameObject("GameClearText");
-                gcObj.transform.SetParent(mainCam.transform);
-                gcObj.transform.localPosition = new Vector3(0, 0, 10);
-                gameClearText = gcObj.AddComponent<TextMeshPro>();
-                gameClearText.text = "GAME CLEAR";
-                gameClearText.fontSize = 12;
-                gameClearText.alignment = TextAlignmentOptions.Center;
-                gameClearText.color = Color.white;
-                gcObj.SetActive(false);
-            }
-        }
     }
 
     void CreateBackgroundProps()
@@ -295,6 +267,11 @@ public class GameManager : MonoBehaviour
         if(uiManager != null) uiManager.UpdateInventoryUI();
     }
 
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
     // --- Game Loop ---
 
     async UniTaskVoid GameLoop()
@@ -307,12 +284,11 @@ public class GameManager : MonoBehaviour
             StageData stageData = GameData.GetStage(stageCount);
             if (stageData == null)
             {
-                // No more stages? Game Over or Loop?
-                // For now, let's just loop or show clear
+                // No more stages?
                 Debug.Log("No more stages defined.");
                 currentState = GameState.End;
-                gameClearText.gameObject.SetActive(true);
-                break;
+                uiManager.ShowGameClear();
+                return; // Stop the loop
             }
 
             bool isBoss = (stageCount == 4); // Hardcoded for now based on prompt, or check StageData
@@ -322,16 +298,15 @@ public class GameManager : MonoBehaviour
             {
                 Debug.Log("Game Over");
                 currentState = GameState.End;
-                break;
+                uiManager.ShowGameOver();
+                return; // Stop the loop
             }
 
             if (isBoss)
             {
                  currentState = GameState.End;
-                 gameClearText.gameObject.SetActive(true);
-                 gameClearText.transform.DOScale(1.5f, 1f).SetLoops(-1, LoopType.Yoyo);
-                 await UniTask.Delay(5000);
-                 break;
+                 uiManager.ShowGameClear();
+                 return; // Stop the loop
             }
 
             await RewardPhase();
@@ -436,29 +411,38 @@ public class GameManager : MonoBehaviour
 
         // Generate 3 Options
         List<RewardOption> options = new List<RewardOption>();
+
+        // Pre-check for unowned masks to prevent duplicates and handle empty pool
+        List<string> ownedMaskIds = inventory.ConvertAll(m => m.id);
+        List<MaskData> unownedMasks = GameData.allMasks.FindAll(m => !ownedMaskIds.Contains(m.id));
+
         int emptySlots = maxInventorySize - inventory.Count;
-        float newMaskChance = 15f + (15f * emptySlots);
+        float baseNewMaskChance = (unownedMasks.Count > 0) ? (15f + (15f * emptySlots)) : 0f;
 
-        // Probabilities for the remaining percent
-        // If NewMask = 30%, Remainder = 70%.
-        // Upgrade = 70 * 0.7 = 49%
-        // Stat = 70 * 0.3 = 21%
+        // Tracking masks picked in this reward phase to avoid duplicates among the 3 options
+        List<string> pickedInThisPhaseIds = new List<string>();
 
-        float upgradeChance = (100f - newMaskChance) * 0.7f;
-
-        // Loop 3 times to generate 3 independent cards
         for(int i=0; i<3; i++)
         {
             float roll = Random.Range(0f, 100f);
             RewardOption opt = new RewardOption();
 
-            if (roll < newMaskChance)
+            // Filter out masks already picked for other slots in this phase
+            List<MaskData> availableMasks = unownedMasks.FindAll(m => !pickedInThisPhaseIds.Contains(m.id));
+
+            // If no more unique masks available, set chance to 0
+            float currentNewMaskChance = (availableMasks.Count > 0) ? baseNewMaskChance : 0f;
+            float currentUpgradeChance = (100f - currentNewMaskChance) * 0.7f;
+
+            if (roll < currentNewMaskChance)
             {
                 opt.type = RewardType.NewMask;
-                opt.maskData = GameData.GetRandomMask().Copy();
+                MaskData picked = availableMasks[Random.Range(0, availableMasks.Count)];
+                opt.maskData = picked.Copy();
                 opt.description = "New Mask";
+                pickedInThisPhaseIds.Add(picked.id);
             }
-            else if (roll < newMaskChance + upgradeChance)
+            else if (roll < currentNewMaskChance + currentUpgradeChance)
             {
                 opt.type = RewardType.UpgradeMask;
                 opt.description = "Upgrade Equipped Mask";
