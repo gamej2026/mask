@@ -5,3 +5,4 @@ ProjectSettings/ProjectVersion.txt
 Logs
 .vs
 obj
+*.csproj
