@@ -1,5 +1,5 @@
 StageID,MonsterIDList
-1,mon_zombie;mon_slime;mon_orc
-2,mon_orc;mon_orc;mon_golem
-3,mon_golem;mon_golem;mon_orc;mon_orc
-4,mon_dragon
+1,Mon_Slime;Mon_Slime;Mon_Zombie
+2,Mon_Slime;Mon_Zombie;Mon_Zombie
+3,Mon_Zombie;Mon_Zombie;Mon_MachineCreature
+4,Mon_Zombie;Mon_MachineCreature;Mon_SkullEngine
