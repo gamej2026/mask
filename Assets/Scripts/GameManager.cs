@@ -72,6 +72,9 @@ public class GameManager : MonoBehaviour
 
         playerBaseData = GameData.GetUnit("PlayerCharacter");
 
+        // 먼저 플레이어 스탯을 초기화 (스태미나 포함)
+        player.InitializePlayer(playerBaseData, new List<MaskData>(), -1);
+
         // Give default mask
         MaskData defaultMask = GameData.allMasks.Count > 0 ? GameData.allMasks[0].Copy() : new MaskData();
         AddMaskToInventory(defaultMask);
