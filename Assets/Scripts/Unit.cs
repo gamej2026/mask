@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
@@ -298,7 +298,7 @@ public class Unit : MonoBehaviour
 
         // Visual Punch
         Vector3 punchDir = (target.transform.position - transform.position).normalized;
-        transform.DOPunchPosition(punchDir * 0.2f, 0.1f, 10, 1).Forget();
+        transform.DOPunchPosition(punchDir * 0.2f, 0.1f, 10, 1);
 
         if (team == Team.Player)
         {
