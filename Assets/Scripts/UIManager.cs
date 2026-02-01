@@ -125,7 +125,6 @@ public class UIManager : MonoBehaviour
         foreach (Transform child in container) Destroy(child.gameObject);
 
         GameObject slotPrefab = Resources.Load<GameObject>("Prefabs/UI/InventorySlot");
-        string[] hotkeys = { "Q", "W", "E", "R" };
 
         for (int i = 0; i < 4; i++)
         {
@@ -172,6 +171,16 @@ public class UIManager : MonoBehaviour
             // Cost Text
             Transform costTr = slot.transform.Find("Cost");
             if (costTr) slotCosts.Add(costTr.GetComponent<TextMeshProUGUI>());
+        }
+
+        // Hotkey 텍스트 설정 (Q, W, E, R)
+        string[] hotKeys = { "Q", "W", "E", "R" };
+        for (int i = 0; i < slotHotkeys.Count && i < hotKeys.Length; i++)
+        {
+            if (slotHotkeys[i] != null)
+            {
+                slotHotkeys[i].text = hotKeys[i];
+            }
         }
     }
 
