@@ -134,7 +134,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aca3890a79a11144386c5d037e718c15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ParallaxLayer
-  parallaxFactor: 0.5
+  parallaxFactor: 0.8
   damping: 0.5
   targetCamera: {fileID: 0}
 --- !u!114 &4601971243855448819
@@ -206,9 +206,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2546455979440681272, guid: fb05e5c624948f244b4433f10b99f152, type: 3}
+      propertyPath: m_Size.x
+      value: 1536
+      objectReference: {fileID: 0}
     - target: {fileID: 4464781832000099419, guid: fb05e5c624948f244b4433f10b99f152, type: 3}
       propertyPath: m_Name
       value: Bridge
+      objectReference: {fileID: 0}
+    - target: {fileID: 5953100562183249838, guid: fb05e5c624948f244b4433f10b99f152, type: 3}
+      propertyPath: m_Size.x
+      value: 1536
+      objectReference: {fileID: 0}
+    - target: {fileID: 7630607921001942738, guid: fb05e5c624948f244b4433f10b99f152, type: 3}
+      propertyPath: m_Size.x
+      value: 1536
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -329,6 +341,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: MiddleBuilding
       objectReference: {fileID: 0}
+    - target: {fileID: 4387577445117793838, guid: cab8073766facc14aa8ae571b888fb04, type: 3}
+      propertyPath: m_Size.x
+      value: 1536
+      objectReference: {fileID: 0}
+    - target: {fileID: 8580250231814013217, guid: cab8073766facc14aa8ae571b888fb04, type: 3}
+      propertyPath: m_Size.x
+      value: 1536
+      objectReference: {fileID: 0}
+    - target: {fileID: 8923424906995393077, guid: cab8073766facc14aa8ae571b888fb04, type: 3}
+      propertyPath: m_Size.x
+      value: 1536
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -362,7 +386,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aca3890a79a11144386c5d037e718c15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ParallaxLayer
-  parallaxFactor: 0.2
+  parallaxFactor: 0.55
   damping: 0.5
   targetCamera: {fileID: 0}
 --- !u!114 &6223844530956433956

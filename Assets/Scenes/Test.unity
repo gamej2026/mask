@@ -135,10 +135,6 @@ PrefabInstance:
       propertyPath: targetCamera
       value: 
       objectReference: {fileID: 953439439}
-    - target: {fileID: 2627242670827103731, guid: 1d11efca4ed62e147b82cd4b32f18128, type: 3}
-      propertyPath: parallaxFactor
-      value: 0.8
-      objectReference: {fileID: 0}
     - target: {fileID: 2963493901056780715, guid: 1d11efca4ed62e147b82cd4b32f18128, type: 3}
       propertyPath: targetCamera
       value: 
@@ -151,10 +147,6 @@ PrefabInstance:
       propertyPath: targetCamera
       value: 
       objectReference: {fileID: 953439439}
-    - target: {fileID: 5217735478796097312, guid: 1d11efca4ed62e147b82cd4b32f18128, type: 3}
-      propertyPath: parallaxFactor
-      value: 0.55
-      objectReference: {fileID: 0}
     - target: {fileID: 7311885916775847156, guid: 1d11efca4ed62e147b82cd4b32f18128, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.04
