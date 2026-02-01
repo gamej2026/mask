@@ -1,13 +1,17 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
+using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
+
+    public event Action<int> OnStageStart;
 
     public Unit player;
     private Unit enemy;
@@ -261,7 +265,7 @@ public class GameManager : MonoBehaviour
             if (player == null) player = pObj.AddComponent<Unit>();
 
             // Initialize will be called after equipping mask
-            player.transform.position = Vector3.zero;
+            player.transform.position = new Vector3(0, GameOption.Instance.spawnHeight, 0);
         }
     }
 
@@ -291,6 +295,24 @@ public class GameManager : MonoBehaviour
 
     public bool AddMaskToInventory(MaskData mask)
     {
+        // Check for duplicate
+        MaskData existing = inventory.Find(m => m.id == mask.id);
+        if (existing != null)
+        {
+            UpgradeMask(existing);
+
+            // If this is the equipped mask, update player stats
+            int index = inventory.IndexOf(existing);
+            if (index == equippedMaskIndex)
+            {
+                 player.InitializePlayer(playerBaseData, inventory, equippedMaskIndex);
+            }
+
+            if (uiManager != null) uiManager.UpdateInventoryUI();
+            Debug.Log($"Duplicate mask {mask.name} found. Upgraded to Lv.{existing.level}");
+            return true;
+        }
+
         if (inventory.Count < maxInventorySize)
         {
             inventory.Add(mask);
@@ -298,6 +320,25 @@ public class GameManager : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    public void UpgradeMask(MaskData m)
+    {
+        m.level++;
+
+        // Passive stats formula: InitialStat * (1 + (Level - 1) * 0.5)
+        MaskData initial = GameData.GetMask(m.id);
+        if (initial != null)
+        {
+            float multiplier = 1f + (m.level - 1) * 0.5f;
+            m.passiveHP = initial.passiveHP * multiplier;
+            m.passiveDef = initial.passiveDef * multiplier;
+            m.passiveSpeed = initial.passiveSpeed * multiplier;
+            m.passiveAtkEff = initial.passiveAtkEff * multiplier;
+            m.passiveAtkSpeedAccel = initial.passiveAtkSpeedAccel * multiplier;
+            m.passiveRange = initial.passiveRange * multiplier;
+            m.passiveStamina = initial.passiveStamina * multiplier;
+        }
     }
 
     public void ReplaceMaskInInventory(int index, MaskData newMask)
@@ -334,12 +375,19 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
+    public void TransitionTest(int transitionTestStageLevel)
+    {
+        OnStageStart?.Invoke(transitionTestStageLevel);
+    }
+
     // --- Game Loop ---
 
     async UniTaskVoid GameLoop(System.Threading.CancellationToken token)
     {
         while (!token.IsCancellationRequested)
         {
+            OnStageStart?.Invoke(stageCount);
+
             // Check Stage Data
             StageData stageData = GameData.GetStage(stageCount);
             if (stageData == null)
@@ -360,9 +408,8 @@ public class GameManager : MonoBehaviour
             await MovePhase(token);
             if (token.IsCancellationRequested) return;
 
-            bool isBoss = (stageCount == 4); // Hardcoded for now based on prompt, or check StageData
-            await BattlePhase(stageData, token);
-            if (token.IsCancellationRequested) return;
+            bool isBoss = (stageCount == 10); // Hardcoded for now based on prompt, or check StageData
+            await BattlePhase(stageData);
 
             if (player.currentHealth <= 0)
             {
@@ -486,17 +533,26 @@ public class GameManager : MonoBehaviour
         SoundManager.Instance.PlaySFX("monster encounter sound"); // 몬스터 조우 시 효과음
         foreach (string monId in stageData.monsterIds)
         {
-            UnitData uData = GameData.GetUnit(monId);
+            string currentMonId = monId;
+#if UNITY_EDITOR
+            if (!string.IsNullOrEmpty(GameOption.Instance.forceSpawnMonsterID))
+            {
+                currentMonId = GameOption.Instance.forceSpawnMonsterID;
+                GameOption.Instance.forceSpawnMonsterID = ""; // Reset
+            }
+#endif
+
+            UnitData uData = GameData.GetUnit(currentMonId);
             if (uData == null)
             {
-                Debug.LogError($"Monster ID {monId} not found in GameData.");
+                Debug.LogError($"Monster ID {currentMonId} not found in GameData.");
                 continue;
             }
             // Spawn
             float screenHeight = mainCam.orthographicSize * 2f;
             float screenWidth = screenHeight * mainCam.aspect;
             Vector3 camPos = mainCam.transform.position;
-            Vector3 spawnPos = new Vector3(camPos.x + screenWidth / 2f + 2f, 0, 0);
+            Vector3 spawnPos = new Vector3(camPos.x + screenWidth / 2f + 2f, GameOption.Instance.spawnHeight, 0);
 
             GameObject eObj;
             // Try specific monster prefab from Data path, fallback to old logic
@@ -505,9 +561,10 @@ public class GameManager : MonoBehaviour
             {
                 monPrefab = Resources.Load<GameObject>(uData.prefabPath);
             } 
-            Debug.LogWarning($"Spawning Monster: {monId} at {monPrefab}");
+            Debug.LogWarning($"Spawning Monster: {currentMonId} at {monPrefab}");
 
-            if (monPrefab == null) monPrefab = Resources.Load<GameObject>($"Prefabs/Units/{monId}");
+
+            if (monPrefab == null) monPrefab = Resources.Load<GameObject>($"Prefabs/Units/{currentMonId}");
             if (monPrefab == null) monPrefab = Resources.Load<GameObject>("Prefabs/Units/Monster");
 
             if (monPrefab != null)
@@ -592,12 +649,12 @@ public class GameManager : MonoBehaviour
     {
         List<RewardOption> options = new List<RewardOption>();
 
-        // Pre-check for unowned masks to prevent duplicates and handle empty pool
-        List<string> ownedMaskIds = inventory.ConvertAll(m => m.id);
-        List<MaskData> unownedMasks = GameData.allMasks.FindAll(m => !ownedMaskIds.Contains(m.id));
+        // We now allow owned masks to be candidates (for leveling up)
+        List<MaskData> candidateMasks = GameData.allMasks;
 
         int emptySlots = maxInventorySize - inventory.Count;
-        float baseNewMaskChance = (unownedMasks.Count > 0) ? (15f + (15f * emptySlots)) : 0f;
+        // Logic for chance can remain similar, but based on candidate availability
+        float baseNewMaskChance = (candidateMasks.Count > 0) ? (15f + (15f * emptySlots)) : 0f;
 
         // Tracking picked items in this reward phase to avoid duplicates among the 3 options
         List<string> pickedMaskIds = new List<string>();
@@ -609,7 +666,7 @@ public class GameManager : MonoBehaviour
             RewardOption opt = new RewardOption();
 
             // Filter out masks already picked for other slots in this phase
-            List<MaskData> availableMasks = unownedMasks.FindAll(m => !pickedMaskIds.Contains(m.id));
+            List<MaskData> availableMasks = candidateMasks.FindAll(m => !pickedMaskIds.Contains(m.id));
 
             // Calculate available reward types and their weights
             float currentNewMaskChance = (availableMasks.Count > 0) ? baseNewMaskChance : 0f;
@@ -629,7 +686,7 @@ public class GameManager : MonoBehaviour
                 continue;
             }
 
-            float roll = Random.Range(0f, totalChance);
+            float roll = UnityEngine.Random.Range(0f, totalChance);
 
             if (roll < currentNewMaskChance)
             {
@@ -711,21 +768,7 @@ public class GameManager : MonoBehaviour
             {
                 // Upgrade currently equipped mask
                 MaskData m = inventory[equippedMaskIndex];
-                m.level++;
-
-                // Passive stats formula: InitialStat * (1 + (Level - 1) * 0.5)
-                MaskData initial = GameData.GetMask(m.id);
-                if (initial != null)
-                {
-                    float multiplier = 1f + (m.level - 1) * 0.5f;
-                    m.passiveHP = initial.passiveHP * multiplier;
-                    m.passiveDef = initial.passiveDef * multiplier;
-                    m.passiveSpeed = initial.passiveSpeed * multiplier;
-                    m.passiveAtkEff = initial.passiveAtkEff * multiplier;
-                    m.passiveAtkSpeedAccel = initial.passiveAtkSpeedAccel * multiplier;
-                    m.passiveRange = initial.passiveRange * multiplier;
-                    m.passiveStamina = initial.passiveStamina * multiplier;
-                }
+                UpgradeMask(m);
 
                 player.InitializePlayer(playerBaseData, inventory, equippedMaskIndex);
                 Debug.Log($"Upgraded Equipped Mask to Lv.{m.level}");

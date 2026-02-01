@@ -158,7 +158,7 @@ MonoBehaviour:
   currentStamina: 0
   target: {fileID: 0}
   isMovingScenario: 0
-  bodyOffset: {x: 0, y: 1.5, z: -1}
+  bodyOffset: {x: 0, y: 0.5, z: -1}
   maskPosTransform: {fileID: 0}
   equippedMask:
     id: 

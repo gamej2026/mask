@@ -92,7 +92,7 @@ public class Unit : MonoBehaviour
             }
             else
             {
-                hudObj.transform.localPosition = Vector3.up * 1.3f; // Position above unit
+                hudObj.transform.localPosition = Vector3.up * 2.5f; // Position above unit
             }
 
             unitHUD = hudObj.GetComponent<UnitHUD>();
@@ -190,7 +190,7 @@ public class Unit : MonoBehaviour
         transform.localScale = Vector3.one * data.scale;
 
         Vector3 parentScale = hudObj.transform.parent.lossyScale;
-        hudObj.transform.localScale = new Vector3(1f / parentScale.x, 1f / parentScale.y, 1f / parentScale.z);
+        hudObj.transform.localScale = new Vector3(-1f / parentScale.x, 1f / parentScale.y, 1f / parentScale.z);
 
         equippedMask = null;
         RecalculateStats();
@@ -363,7 +363,7 @@ public class Unit : MonoBehaviour
         // Stamina Recovery
         if (maxStamina > 0 && currentStamina < maxStamina)
         {
-            currentStamina += Time.deltaTime / 5f;
+            currentStamina += Time.deltaTime / GameOption.Instance.staminaPerSecond;
             if (currentStamina > maxStamina) currentStamina = maxStamina;
         }
 
