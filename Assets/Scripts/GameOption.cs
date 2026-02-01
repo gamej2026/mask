@@ -27,8 +27,7 @@ public class GameOption : MonoBehaviour
     [Tooltip("몬스터 강제 스폰 ID (빈 문자열이면 비활성화)")]
     public string forceSpawnMonsterID = "";
 
-    //[Header("게임 시작 레벨")]
-    [HideInInspector]
+    ////[Header("게임 시작 레벨")]
     public int startStageLevel = 1;
 
     [Header("트렌지션 테스트용 레벨")]
