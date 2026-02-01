@@ -1,9 +1,9 @@
 ID,Name,HP,MaxStamina,AtkEff,AtkSpeedAccel,MoveSpeed,Def,AtkInterval,Range,Knockback,Scale,ColorHex,PrefabPath,AtkSound,HitSound
-PlayerCharacter,Player,100,10,100,100,2,0,1,1.5,1,1,FFFFFF,Prefabs/Units/Player,player attack sound,player pain sound
-Mon_Slime,Slime,30,0,10,100,1,0,2,1,0.5,1,00FF00,Prefabs/Units/Mon_Slime,slime attack sound,slime splat sound
-Mon_Zombie,Zombie,30,0,10,100,0.5,0,3,1,0.5,1,FF0000,Prefabs/Units/Mon_Zombie,monster attack sound,monster grunt sound
-Mon_BigSlime,Slime,30,0,10,100,1,0,2,1,0.5,1.6,00FF00,Prefabs/Units/Mon_Slime,slime attack sound,slime splat sound
-Mon_GiantSlime,Slime,30,0,10,100,1,0,2,1,0.5,2.5,00FF00,Prefabs/Units/Mon_Slime,slime attack sound,slime splat sound
-Mon_MachineCreature,Machine Creature,30,0,10,100,1.5,5,1.5,1,0.5,1,6400,Prefabs/Units/Mon_MachineCreature,monster attack sound,monster grunt sound
-Mon_MachineCreature_Big,Machine Creature,30,0,10,100,1.5,5,1.5,1,0.5,1.6,6400,Prefabs/Units/Mon_MachineCreature,monster attack sound,monster grunt sound
-Mon_SkullEngine,Skull Engine,500,0,10,100,3,0,1,1,0.5,1,333333,Prefabs/Units/mon_SkullEngine,monster attack sound,monster grunt sound
+PlayerCharacter,Player,100,10,100,50,2,0,3,4,1,1,FFFFFF,Prefabs/Units/Player,player attack sound,player pain sound
+Mon_Slime,Slime,30,0,4,100,1,0,3,2,0.5,1,00FF00,Prefabs/Units/Mon_Slime,slime attack sound,slime splat sound
+Mon_Zombie,Zombie,30,0,20,100,0.5,0,3,2,0.5,1,FF0000,Prefabs/Units/Mon_Zombie,monster attack sound,monster grunt sound
+Mon_BigSlime,Slime,30,0,20,100,1.5,0,3,2,0.5,1.6,00FF00,Prefabs/Units/Mon_Slime,slime attack sound,slime splat sound
+Mon_GiantSlime,Slime,30,0,20,100,2,0,3,2,0.5,2.5,00FF00,Prefabs/Units/Mon_Slime,slime attack sound,slime splat sound
+Mon_MachineCreature,Machine Creature,30,0,20,100,2.5,0,3,2,0.5,1,6400,Prefabs/Units/Mon_MachineCreature,monster attack sound,monster grunt sound
+Mon_MachineCreature_Big,Machine Creature,30,0,20,100,2.5,0,3,2,0.5,1.6,6400,Prefabs/Units/Mon_MachineCreature,monster attack sound,monster grunt sound
+Mon_SkullEngine,Skull Engine,500,0,20,100,3,0,3,2,0.5,1,333333,Prefabs/Units/mon_SkullEngine,monster attack sound,monster grunt sound

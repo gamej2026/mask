@@ -253,6 +253,7 @@ public class Unit : MonoBehaviour
         else if (team == Team.Enemy)
         {
             equipAtk = baseAtkEff;
+            baseAtkEff = 100;
             equipInterval = baseAtkInterval;
             equipRange = baseRange;
             equipKnockback = baseKnockback;
