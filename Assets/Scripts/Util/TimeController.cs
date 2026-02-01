@@ -6,6 +6,7 @@ public class TimeController : MonoBehaviour
 {
     private void Update()
     {
+#if UNITY_EDITOR
         //Time.deltaTime 사양이 다른 컴퓨터에서도 동일한 결과를 만들기 위해서
         //Time.timeScale == 1 , 2 : 2배빠른 속도, 0.1f : 10배 느린 속도.
 
@@ -33,5 +34,6 @@ public class TimeController : MonoBehaviour
             else
                 Time.timeScale = 1;
         }
-    } 
+#endif
+    }
 }
