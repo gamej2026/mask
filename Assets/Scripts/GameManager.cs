@@ -443,12 +443,13 @@ public class GameManager : MonoBehaviour
     async UniTask WaitForBoxClick(Vector3 position, System.Threading.CancellationToken token)
     {
         SoundManager.Instance.PlaySFX("reward box drop sound"); // 보상 드랍 효과음
-        GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        //GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        GameObject box = (GameObject)UnityEngine.Object.Instantiate( Resources.Load("RewardBox")    );
         box.name = "RewardBox";
         box.transform.position = position;
         box.transform.localScale = Vector3.one * 0.8f;
         var rend = box.GetComponent<Renderer>();
-        if (rend) rend.material.color = new Color(0.8f, 0.5f, 0.2f); // Wood color
+        if (rend) rend.sharedMaterial.color = new Color(0.8f, 0.5f, 0.2f); // Wood color
 
         // Add a simple float effect
         box.transform.DOMoveY(position.y + 0.5f, 1f).SetLoops(-1, LoopType.Yoyo);
