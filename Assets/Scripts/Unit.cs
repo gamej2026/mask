@@ -190,7 +190,7 @@ public class Unit : MonoBehaviour
         transform.localScale = Vector3.one * data.scale;
 
         Vector3 parentScale = hudObj.transform.parent.lossyScale;
-        hudObj.transform.localScale = new Vector3(1f / parentScale.x, 1f / parentScale.y, 1f / parentScale.z);
+        hudObj.transform.localScale = new Vector3(-1f / parentScale.x, 1f / parentScale.y, 1f / parentScale.z);
 
         equippedMask = null;
         RecalculateStats();
