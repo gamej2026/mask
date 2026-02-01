@@ -436,7 +436,6 @@ public class Unit : MonoBehaviour
                     SpawnProjectile();
                     break;
                 case ActionType.Heal:
-                    SoundManager.Instance.PlaySFX("heal sound"); // 회복 효과음1
                     Heal(finalAtkPower * 2f);
                     break;
                 case ActionType.AtkBuff:
@@ -498,6 +497,7 @@ public class Unit : MonoBehaviour
 
     public void Heal(float amount)
     {
+        SoundManager.Instance.PlaySFX("heal sound"); // 회복 효과음1
         currentHealth += amount;
         if (currentHealth > maxHealth) currentHealth = maxHealth;
         UpdateVisuals();
