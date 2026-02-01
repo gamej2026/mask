@@ -409,7 +409,7 @@ public class GameManager : MonoBehaviour
             if (token.IsCancellationRequested) return;
 
             bool isBoss = (stageCount == 10); // Hardcoded for now based on prompt, or check StageData
-            await BattlePhase(stageData);
+            await BattlePhase(stageData, token);
 
             if (player.currentHealth <= 0)
             {
