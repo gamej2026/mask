@@ -98,7 +98,7 @@ public class RewardCard : MonoBehaviour
         titleText.text = $"{m.name}\nLv. {m.level} -> <color=#00FF00>Lv. {m.level + 1}</color>";
 
         // 아이콘
-        Sprite icon = Resources.Load<Sprite>($"Icons/{m.iconName}");
+        Sprite icon = Resources.Load<Sprite>($"{m.iconName}");
         if (rewardIcon)
         {
             if (icon != null)
