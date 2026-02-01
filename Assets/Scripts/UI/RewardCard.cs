@@ -42,7 +42,7 @@ public class RewardCard : MonoBehaviour
         }
         else if (opt.type == RewardType.UpgradeMask)
         {
-            SetUpgradeMaskData();
+           SetUpgradeMaskData();
         }
         else if (opt.type == RewardType.StatBoost)
         {
@@ -132,10 +132,22 @@ public class RewardCard : MonoBehaviour
     {
         titleText.text = statData.name;
 
+        var m = GameManager.Instance.inventory[GameManager.Instance.equippedMaskIndex];
+
+        // 아이콘
+        Sprite icon = Resources.Load<Sprite>($"{m.iconName}");
         if (rewardIcon)
         {
-            rewardIcon.sprite = null;
-            rewardIcon.color = Color.green;
+            if (icon != null)
+            {
+                rewardIcon.sprite = icon;
+                rewardIcon.color = Color.white;
+            }
+            else
+            {
+                rewardIcon.sprite = null;
+                rewardIcon.color = m.color;
+            }
         }
 
         bool hasPositive = false;
